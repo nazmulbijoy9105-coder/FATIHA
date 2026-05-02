@@ -1234,13 +1234,23 @@ export function runStage25(
       });
     }
 
-    // Khas land check
+    // Khas land check — HALT civil pipeline
     if (facts.khasLand) {
       flags.push({
         id: 'SAT_KHAS_LAND',
-        severity: 'yellow',
-        message: 'Khas land — transfer restrictions apply under SAT Act. Government may retain ownership.',
-        legalRef: 'SAT Act S.82, S.103',
+        severity: 'critical',
+        message: 'Khas land — no civil suit maintainable for title against government without first exhausting revenue remedy. Redirect to Revenue Court / AC (Land).',
+        legalRef: 'SAT Act S.82, S.103 — Revenue Court jurisdiction',
+      });
+    }
+
+    // Bargadar (share-cropper) special protection
+    if (hasKeyword(facts.description || facts.disputeType || '', ['bargadar', 'bhagchasi', 'sharecropper', 'share cropper', 'ভাগচাষী', 'বর্গাচাষী'])) {
+      flags.push({
+        id: 'SAT_BARGADAR_PROTECTION',
+        severity: 'red',
+        message: 'Bargadar (share-cropper) detected — special statutory protection applies under SAT Act. Eviction, rent modification, and transfer of bargadari rights are restricted. Landlord cannot unilaterally terminate without Revenue Court order.',
+        legalRef: 'SAT Act — Bargadar protection rules',
       });
     }
 
