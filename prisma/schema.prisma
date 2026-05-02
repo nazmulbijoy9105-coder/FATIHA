@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FATIHA v3.0 — PostgreSQL Schema (Vercel Postgres / Neon)
+// Static legal rules live in TypeScript code (stages-0-to-4.ts etc.)
+// These tables store dynamic case data, users, and payments.
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  phone        String   @default("")
+  passwordHash String
+  role         String   @default("user") // admin | user
+  plan         String   @default("free") // free | pro | enterprise
+  provider     String   @default("credentials")
+  avatar       String?
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cases    Case[]
+  payments Payment[]
+}
+
+model Case {
+  id           String   @id @default(uuid())
+  caseNumber   String   @default("")
+  title        String   @default("")
+  status       String   @default("draft") // draft | analyzed | completed | archived
+  plaintiff    String   @default("")
+  defendant    String   @default("")
+  court        String?
+  mouza        String?
+  dag          String?
+  khatian      String?
+  description  String?  @db.Text
+  factsJson    String?  @db.Text
+  analysisJson String?  @db.Text
+  scoreJson    String?  @db.Text
+  userId       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  userId          String
+  userName        String
+  userEmail       String
+  userPhone       String
+  plan            String   // pro | enterprise
+  amount          Float
+  currency        String   @default("BDT")
+  method          String   // bkash | nagad | bank
+  transactionId   String
+  status          String   @default("pending") // pending | verified | rejected | expired
+  verifiedBy      String?
+  verifiedAt      DateTime?
+  rejectionReason String?  @db.Text
+  note            String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+}
