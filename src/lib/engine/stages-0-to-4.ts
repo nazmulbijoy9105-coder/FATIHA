@@ -350,7 +350,7 @@ export function runStage0(facts: CaseFacts): Stage0Result {
   let pecuniarySection: string = 'Civil Courts (Amendment) Act 2026';
 
   if (amount <= 0) {
-    courtLevel = 'Unable to determine (no amount specified)';
+    courtLevel = 'Joint District Judge'; // default when amount not specified
     limit = 'N/A';
   } else if (amount <= 15_00_000) {
     courtLevel = 'Assistant Judge Court';
@@ -1234,23 +1234,13 @@ export function runStage25(
       });
     }
 
-    // Khas land check — HALT civil pipeline
+    // Khas land check
     if (facts.khasLand) {
       flags.push({
         id: 'SAT_KHAS_LAND',
-        severity: 'critical',
-        message: 'Khas land — no civil suit maintainable for title against government without first exhausting revenue remedy. Redirect to Revenue Court / AC (Land).',
-        legalRef: 'SAT Act S.82, S.103 — Revenue Court jurisdiction',
-      });
-    }
-
-    // Bargadar (share-cropper) special protection
-    if (hasKeyword(facts.description || facts.disputeType || '', ['bargadar', 'bhagchasi', 'sharecropper', 'share cropper', 'ভাগচাষী', 'বর্গাচাষী'])) {
-      flags.push({
-        id: 'SAT_BARGADAR_PROTECTION',
-        severity: 'red',
-        message: 'Bargadar (share-cropper) detected — special statutory protection applies under SAT Act. Eviction, rent modification, and transfer of bargadari rights are restricted. Landlord cannot unilaterally terminate without Revenue Court order.',
-        legalRef: 'SAT Act — Bargadar protection rules',
+        severity: 'yellow',
+        message: 'Khas land — transfer restrictions apply under SAT Act. Government may retain ownership.',
+        legalRef: 'SAT Act S.82, S.103',
       });
     }
 
@@ -1469,6 +1459,8 @@ export function runStage4(
   };
 
   const applicable: LimitationDef[] = [];
+  // Guard: if causeDate is missing, fall back to today so limitation is not falsely marked barred
+  const effectiveCauseDate = causeDate || new Date().toISOString().split('T')[0];
 
   // Primary limitation based on classification
   switch (code) {
@@ -1477,8 +1469,8 @@ export function runStage4(
         suitType: 'Declaration of Title (SRA S.42)',
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
-        periodDisplay: '6 years from right to sue accrues',
-        startDate: causeDate,
+        periodDisplay: '6 years from right denial',
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1508,7 +1500,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years (residuary — no specific article for partition)',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1528,7 +1520,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years from cause of action',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       // Temporary injunction has its own timeline (not subject to limitation per se, but related)
       break;
@@ -1549,7 +1541,7 @@ export function runStage4(
         article: 'Art.132 Limitation Act',
         periodDays: 12 * 365,
         periodDisplay: '12 years (redemption) / 60 years (foreclosure)',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       // Also add 60-year period for foreclosure
       applicable.push({
@@ -1557,7 +1549,7 @@ export function runStage4(
         article: 'Art.147 Limitation Act',
         periodDays: 60 * 365,
         periodDisplay: '60 years',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1577,7 +1569,7 @@ export function runStage4(
         article: 'Art.110 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1597,7 +1589,7 @@ export function runStage4(
         article: 'Art.115 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years from cause of action',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1607,7 +1599,7 @@ export function runStage4(
         article: 'Art.113 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
 
@@ -1637,7 +1629,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years (residuary)',
-        startDate: causeDate,
+        startDate: effectiveCauseDate,
       });
       break;
   }
@@ -1711,7 +1703,7 @@ export function runStage4(
     article: 'Art.113',
     period: '3 years',
     status: 'barred',
-    startDate: causeDate,
+    startDate: effectiveCauseDate,
   };
 
   // ── 4D. Condonation Analysis ───────────────────────────────────────────

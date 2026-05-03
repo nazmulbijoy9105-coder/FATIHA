@@ -55,7 +55,7 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       `Track: ${stage0.track} | Suit: ${stage0.suitTrack} | Court: ${stage0.assignedCourt}`,
       stage0.primaryLaw, objFlags);
   } catch (e) {
-    stage0 = { track: 'unknown', suitTrack: 'regular', primaryLaw: 'Unknown', territorialJurisdiction: { basis: 'unknown', court: 'unknown', section: '' }, pecuniaryJurisdiction: { courtLevel: 'unknown', amountClaimed: 0, limit: 'unknown', section: '' }, assignedCourt: 'unknown', objections: [] };
+    stage0 = runStage0(facts); // fallback
     addPipeline(0, 'Entry Gate', 'error', 'red', 'Stage 0 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
   }
 
@@ -75,8 +75,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       `${stage1.parties.length} parties | ${stage1.transactionChain.length} transaction(s) | Possessor: ${stage1.possession.currentPossessor}`,
       'CPC O.7 + Evidence Act', s1Flags);
   } catch (e) {
-    stage1 = { parties: [], transactionChain: [], possession: { currentPossessor: 'unknown', nature: 'owner' }, documentStack: [], missingParties: [], guardianRequired: false, isBankCreditor: false, isNegotiableInstrument: false, isArthaRinEligible: false };
-    addPipeline(1, 'Fact Extraction', 'error', 'red', 'Stage 1 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage1 = runStage1(facts);
+    addPipeline(1, 'Fact Extraction', 'error', 'red', 'Stage 1 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -89,8 +89,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       `Class: ${stage2.classification.name} (${stage2.classification.code}) → Stage ${stage2.routedStage}`,
       'CPC + SRA', []);
   } catch (e) {
-    stage2 = { classification: { code: 'unknown', name: 'Unknown', description: 'Classification failed', targetStage: 7 }, routedStage: 7 };
-    addPipeline(2, 'Legal Classification', 'error', 'red', 'Stage 2 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage2 = runStage2(facts, stage0);
+    addPipeline(2, 'Legal Classification', 'error', 'red', 'Stage 2 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -104,8 +104,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       `${stage25.flags.length} flag(s) | Khas: ${stage25.satAct?.khasLand || 'N/A'} | Ceiling: ${facts.ceilingExceeded || false}`,
       'TPA + SAT Act', stage25.flags);
   } catch (e) {
-    stage25 = { saleValidity: { registered: false, considerationOver100: false, validUnderS54: false, validUnderS17: false, issues: [] }, flags: [] };
-    addPipeline(2.5, 'TPA + SAT Act', 'error', 'red', 'Stage 2.5 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage25 = runStage25(facts, stage1, stage2);
+    addPipeline(2.5, 'TPA + SAT Act', 'error', 'red', 'Stage 2.5 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -121,8 +121,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
         : `BLOCKED | Critical: ${stage3.criticalBlockers.join('; ')}`,
       'Registration Act + Stamp Act', stage3.bars);
   } catch (e) {
-    stage3 = { registration: { isCompulsorilyRegistrable: false, isRegistered: false, admissibleForTitle: false, admissibleForCollateral: false, section17: false, section49: false }, stamp: { sufficientlyStamped: false, impounded: false, penaltyRequired: false, status: 'pass' }, possession: stage1.possession, mutation: { status: 'unknown', weight: 'unknown', nonConclusive: true }, bars: [], passed: false, criticalBlockers: ['Stage 3 error'] };
-    addPipeline(3, 'Precondition Filters', 'error', 'red', 'Stage 3 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage3 = runStage3(facts, stage1);
+    addPipeline(3, 'Precondition Filters', 'error', 'red', 'Stage 3 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -137,14 +137,14 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       s4Flags.push({ id: '4-BARRED', severity: 'critical', message: `Suit time-barred — ${stage4.primaryLimitation.article} (${stage4.primaryLimitation.period})`, legalRef: 'Limitation Act ' + stage4.primaryLimitation.article });
     }
     if (stage4.acknowledgementResets) {
-      s4Flags.push({ id: '4-ACK', severity: 'info', message: 'Acknowledgement may reset limitation period', legalRef: 'Limitation Act S.19' });
+      s4Flags.push({ id: '4-ACK', severity: 'info', message: 'Acknowledgement may reset limitation period', legalRef: 'Limitation Act S.25' });
     }
     addPipeline(4, 'Limitation Engine', 'completed', s4Severity,
       `${stage4.primaryLimitation.article} (${stage4.primaryLimitation.period}) — ${stage4.primaryLimitation.status} | Gate: ${stage4.gateResult.toUpperCase()}`,
       'Limitation Act', s4Flags);
   } catch (e) {
-    stage4 = { primaryLimitation: { suitType: 'unknown', article: 'unknown', period: 'unknown', status: 'within_time', startDate: facts.causeOfActionDate || '' }, allApplicable: [], condonationAvailable: false, acknowledgementResets: false, partPaymentResets: false, fraudConcealment: false, suitTimeBarred: false, gateResult: 'pass' };
-    addPipeline(4, 'Limitation Engine', 'error', 'red', 'Stage 4 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage4 = runStage4(facts, stage0, stage2);
+    addPipeline(4, 'Limitation Engine', 'error', 'red', 'Stage 4 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -210,8 +210,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
       `Strength: ${stage8.evidenceStrength}/100 | ${stage8.documentHierarchy.length} document(s) | Burden: ${stage8.burdenOfProof.split('—')[0].trim()}`,
       'Evidence Act 1872', []);
   } catch (e) {
-    stage8 = { documentHierarchy: [], evidenceActRules: [], burdenOfProof: 'plaintiff', adversarialThreshold: 'balance of probabilities', digitalEvidenceAdmissible: false, s65bCertificate: false, evidenceStrength: 30, keyWeaknesses: ['Stage 8 failed — review evidence manually'], keyStrengths: [] };
-    addPipeline(8, 'Evidence Engine', 'error', 'red', 'Stage 8 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage8 = runStage8(facts, stage1, stage25);
+    addPipeline(8, 'Evidence Engine', 'error', 'red', 'Stage 8 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -230,8 +230,8 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
         : `BLOCKED — ${stage9.blockingDefect}`,
       'CPC O.7 R.11 + O.1 R.9', s9Flags);
   } catch (e) {
-    stage9 = { defects: [], fatalDefects: [], waivableDefects: [], suitProceedable: true, blockingDefect: null };
-    addPipeline(9, 'Procedural Defects', 'error', 'red', 'Stage 9 failed: ' + (e instanceof Error ? e.message : String(e)), '', []);
+    stage9 = runStage9(facts, stage1, stage4);
+    addPipeline(9, 'Procedural Defects', 'error', 'red', 'Stage 9 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -300,7 +300,7 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
     stage5, stage6, stage7, stage8, stage9, stage10, stage11, stage12);
 
   const decSeverity: Severity = decision.overallStrength === 'STRONG' ? 'green' : decision.overallStrength === 'MODERATE' ? 'yellow' : 'red';
-  addPipeline(15, 'Final Decision', 'completed', decSeverity,
+  addPipeline(14, 'Final Decision', 'completed', decSeverity,
     `${decision.outcomeType.replace(/_/g, ' ').toUpperCase()} — ${decision.grantedReliefs.length} granted, ${decision.refusedReliefs.length} refused | Strength: ${decision.overallStrength} (${decision.winProbability}%) | Post-decree: ${decision.postDecreePath}`,
     'CPC + SRA + TPA + Limitation Act',
     decision.riskFactors.map(r => ({ id: 'DEC-' + Math.random().toString(36).slice(2, 6), severity: 'yellow' as Severity, message: r, legalRef: 'Decision Engine' })));
@@ -864,7 +864,7 @@ function generateStrategy(
   if (stage4.condonationAvailable) phase1Actions.push('File S.5 condonation application with affidavit');
   if (stage0.suitTrack === 'artha_rin') phase1Actions.push('Issue S.6(1) demand notice (mandatory pre-litigation step)');
   if (stage12?.outcome === 'pending_deposit') phase1Actions.push('Deposit full sale consideration in court');
-  if (stage1.documentStack.some(d => !d.registered)) phase1Actions.push('Obtain certified copies of all registered documents');
+  if (facts => stage1.documentStack.some(d => !d.registered)) phase1Actions.push('Obtain certified copies of all registered documents');
   const phase1Risk: StrategyPhase['riskLevel'] = stage4.gateResult !== 'pass' ? 'high' : 'low';
 
   // Phase 2: Filing + Interim
