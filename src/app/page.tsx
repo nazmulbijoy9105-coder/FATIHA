@@ -367,6 +367,11 @@ export default function FatihaPage() {
   const [formAcqMutation, setFormAcqMutation] = useState('');
   const [formCeilingExceeded, setFormCeilingExceeded] = useState('');
   const [formAcquisition, setFormAcquisition] = useState('');
+  const [formAmountClaimed, setFormAmountClaimed] = useState('');
+  const [formDefaultDate, setFormDefaultDate] = useState('');
+  const [formInstrumentType, setFormInstrumentType] = useState('');
+  const [formPreDeposit, setFormPreDeposit] = useState('');
+  const [formS80Notice, setFormS80Notice] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
   const [formInheritanceOpen, setFormInheritanceOpen] = useState(false);
@@ -651,12 +656,14 @@ export default function FatihaPage() {
 
   const resetForm = () => {
     setFormTitle(''); setFormPlaintiff(''); setFormDefendant(''); setFormDisputeType('');
-    setFormCauseDate(''); setFormDescription(''); setFormMouza(''); setFormUpazila(''); setFormDistrict('');
+    setFormCauseDate(''); setFormDescription(''); setFormMouza(''); setFormUpazila('');
     setFormDag(''); setFormKhatian(''); setFormClassification(''); setFormLandArea('');
     setFormDeedType(''); setFormRegDate(''); setFormConsideration(''); setFormStampDuty('');
     setFormPoaHolder(''); setFormPossessor(''); setFormPossStartDate(''); setFormPossNature('');
     setFormPossActs(''); setFormS17(''); setFormS49(''); setFormBenami(''); setFormStampOk('');
     setFormReligion(''); setFormApplicableLaw(''); setFormWillExists(''); setFormMutation('');
+    setFormDistrict(''); setFormAmountClaimed(''); setFormDefaultDate('');
+    setFormInstrumentType(''); setFormPreDeposit(''); setFormS80Notice('');
     setFormAcqMutation(''); setFormCeilingExceeded(''); setFormAcquisition(''); setAutoDetected(false);
   };
 
@@ -664,16 +671,85 @@ export default function FatihaPage() {
     if (!formTitle || !formPlaintiff || !formDefendant) { toast({ title: 'Missing fields', description: 'Title, Plaintiff, Defendant required', variant: 'destructive' }); return; }
     setAnalyzing(true);
     try {
+      // ── detectPartyKind: auto-detect from name ──────────────────────
+      const detectPartyKind = (name: string): string => {
+        if (/bank|nbfi|financial institution/i.test(name)) return 'bank';
+        if (/ltd|limited|pvt|llc|corp|inc|company|traders|enterprise/i.test(name)) return 'company';
+        if (/government|govt|sarkari|bangladesh|ministry|district/i.test(name)) return 'government';
+        return 'individual';
+      };
+
       const caseFacts: CaseFacts = {
-        parties: { purchaser: formPlaintiff, vendor: formDefendant, poaHolder: formPoaHolder || undefined },
-        property: { mouza: formMouza, upazila: formUpazila, dagCS: formDag || undefined, khatianCS: formKhatian || undefined, classification: formClassification || undefined, areaDeed: formLandArea || undefined },
-        transaction: { deedType: formDeedType || 'Sale Deed', registrationDate: formRegDate || undefined, stampDutyPaid: formStampOk === 'yes', registered: (formS17 === 'yes' || !!formRegDate) ? true : (formS17 === 'no' || formS49 === 'yes') ? false : true },
-        possession: { currentPossessor: formPossessor || 'Plaintiff', startDate: formPossStartDate || undefined, nature: (formPossNature as 'open' | 'hostile' | 'peaceful') || undefined, physicalActs: formPossActs ? formPossActs.split(',').map(s => s.trim()) : undefined },
-        documentValidity: { s17Compliant: formS17 === 'yes', s49Inadmissible: formS49 === 'yes', benamiFlag: formBenami === 'yes', stampDutyOk: formStampOk === 'yes' },
-        chronology: { causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0] },
-        disputeType: formDisputeType || 'Title Suit (T.S.) — Declaration + Recovery of Possession',
-        inheritance: formReligion ? { religion: formReligion, applicableLaw: formApplicableLaw || 'MFLO', willExists: formWillExists === 'yes', mutationStatus: formMutation || 'pending' } : undefined,
-        stateAction: formAcqMutation ? { mutationStatus: formAcqMutation, ceilingExceeded: formCeilingExceeded === 'yes', acquisitionOrder: formAcquisition || undefined } : undefined,
+        // ── Core ─────────────────────────────────────────────────────────
+        disputeType: formDisputeType || 'property title declaration',
+        description: formDescription || '',
+        causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0],
+        filingDate: new Date().toISOString().split('T')[0],
+
+        // ── Parties ──────────────────────────────────────────────────────
+        plaintiff: formPlaintiff,
+        plaintiffType: detectPartyKind(formPlaintiff),
+        defendant: formDefendant,
+        defendantType: detectPartyKind(formDefendant),
+        isBankCreditor: /bank|nbfi|financial institution/i.test(formPlaintiff),
+        isGovernmentDefendant: /government|govt|sarkari|ac land|dc office/i.test(formDefendant),
+        isNegotiableInstrument: /cheque|promissory|bill of exchange/i.test(formDisputeType + ' ' + formInstrumentType),
+
+        // ── Property ─────────────────────────────────────────────────────
+        district: formDistrict || undefined,
+        upazila: formUpazila || undefined,
+        mouza: formMouza || undefined,
+        dag: formDag || undefined,
+        khatian: formKhatian || undefined,
+        landArea: formLandArea || undefined,
+        classification: formClassification || undefined,
+
+        // ── Transaction ──────────────────────────────────────────────────
+        deedType: formDeedType || 'sale deed',
+        registrationDate: formRegDate || undefined,
+        consideration: formConsideration || undefined,
+        registered: formS17 === 'yes' || !!formRegDate,
+        stampDutyOk: formStampOk === 'yes',
+        s17Compliant: formS17 === 'yes',
+        s49Inadmissible: formS49 === 'yes',
+        benamiFlag: formBenami === 'yes',
+        multipleSales: /double sale|two buyer|same vendor/i.test(formDescription),
+
+        // ── Possession ───────────────────────────────────────────────────
+        currentPossessor: formPossessor || 'plaintiff',
+        possessionStartDate: formPossStartDate || undefined,
+        possessionNature: formPossNature || undefined,
+        physicalActs: formPossActs ? formPossActs.split(',').map((s: string) => s.trim()) : undefined,
+
+        // ── SAT Act / Land ────────────────────────────────────────────────
+        khasLand: /khas/i.test(formAcqMutation + ' ' + formDescription),
+        ceilingExceeded: formCeilingExceeded === 'yes',
+        mutationStatus: formMutation || formAcqMutation || undefined,
+        acquisitionOrder: formAcquisition || undefined,
+
+        // ── Inheritance ───────────────────────────────────────────────────
+        religion: formReligion || undefined,
+        poaHolder: formPoaHolder || undefined,
+        plaintiffReadyWilling: true,
+
+        // ── Money suits ───────────────────────────────────────────────────
+        amountClaimed: formAmountClaimed ? Number(formAmountClaimed.replace(/,/g, '')) : undefined,
+        defaultDate: formDefaultDate || undefined,
+        instrumentType: formInstrumentType || undefined,
+
+        // ── Pre-emption ───────────────────────────────────────────────────
+        preEmptionClaim: /pre.?emption/i.test(formDisputeType),
+        preDepositMade: formPreDeposit === 'yes',
+
+        // ── Partition ─────────────────────────────────────────────────────
+        partitionClaim: /partition/i.test(formDisputeType),
+        coSharers: undefined,
+
+        // ── Adverse possession ────────────────────────────────────────────
+        adversePossessionClaim: /adverse.?possession/i.test(formDisputeType),
+
+        // ── Government ────────────────────────────────────────────────────
+        s80NoticeGiven: formS80Notice === 'yes',
       };
       const caseRes = await fetch('/api/cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: formTitle, plaintiff: formPlaintiff, defendant: formDefendant, description: formDescription, mouza: formMouza, dag: formDag, khatian: formKhatian, factsJson: caseFacts, userId: user?.id }) });
       if (!caseRes.ok) { const e = await caseRes.json(); throw new Error(e.error || 'Failed'); }
@@ -1189,7 +1265,7 @@ export default function FatihaPage() {
       </CardContent></Card>
       {/* Property */}
       <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><CardTitle className="text-base">Property Details</CardTitle></CardHeader><CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Mouza</Label><Input placeholder="Village name" value={formMouza} onChange={e => setFormMouza(e.target.value)} /></div><div className="space-y-2"><Label>Upazila</Label><Input placeholder="Upazila name" value={formUpazila} onChange={e => setFormUpazila(e.target.value)} /></div><div className="space-y-2"><Label>District</Label><Input placeholder="e.g. Narsingdi" value={formDistrict} onChange={e => setFormDistrict(e.target.value)} /></div></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Mouza</Label><Input placeholder="Village name" value={formMouza} onChange={e => setFormMouza(e.target.value)} /></div><div className="space-y-2"><Label>Upazila</Label><Input placeholder="Upazila name" value={formUpazila} onChange={e => setFormUpazila(e.target.value)} /></div><div className="space-y-2"><Label>District *</Label><Input placeholder="e.g. Narsingdi" value={formDistrict} onChange={e => setFormDistrict(e.target.value)} /></div></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Dag No.</Label><Input placeholder="DAG number" value={formDag} onChange={e => setFormDag(e.target.value)} /></div><div className="space-y-2"><Label>Khatian No.</Label><Input placeholder="CS/RS khatian" value={formKhatian} onChange={e => setFormKhatian(e.target.value)} /></div><div className="space-y-2"><Label>Classification</Label><Select value={formClassification} onValueChange={setFormClassification}><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger><SelectContent>{PROPERTY_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Land Area</Label><Input placeholder="e.g., 0.5 acres" value={formLandArea} onChange={e => setFormLandArea(e.target.value)} /></div><div className="space-y-2"><Label>Registration Date</Label><Input type="date" value={formRegDate} onChange={e => setFormRegDate(e.target.value)} /></div></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Consideration (Tk)</Label><Input placeholder="Sale price" value={formConsideration} onChange={e => setFormConsideration(e.target.value)} /></div><div className="space-y-2"><Label>Stamp Duty</Label><Input placeholder="Stamp amount" value={formStampDuty} onChange={e => setFormStampDuty(e.target.value)} /></div></div>
@@ -1459,7 +1535,7 @@ export default function FatihaPage() {
                 <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold">14-Stage Pipeline</h4>
-                    <span className="text-[10px] text-muted-foreground">{r.pipeline?.length || 0} stages</span>
+                    <span className="text-[10px] text-muted-foreground">14-stage analysis</span>
                   </div>
                   <div className="space-y-2 max-h-[32rem] overflow-y-auto">
                     {r.pipeline && r.pipeline.length > 0 ? r.pipeline.map((stage, i) => (
