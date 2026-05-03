@@ -659,20 +659,93 @@ export default function FatihaPage() {
     setFormAcqMutation(''); setFormCeilingExceeded(''); setFormAcquisition(''); setAutoDetected(false);
   };
 
+  const detectPartyKind = (name: string): string => {
+    if (/bank|nbfi|financial institution/i.test(name)) return 'bank';
+    if (/ltd|limited|pvt|llc|corp|inc|company|traders|enterprise/i.test(name)) return 'company';
+    if (/government|govt|sarkari|bangladesh|ministry|district/i.test(name)) return 'government';
+    return 'individual';
+  };
+
   const handleAnalyzeCase = async () => {
     if (!formTitle || !formPlaintiff || !formDefendant) { toast({ title: 'Missing fields', description: 'Title, Plaintiff, Defendant required', variant: 'destructive' }); return; }
     setAnalyzing(true);
     try {
       const caseFacts: CaseFacts = {
-        parties: { purchaser: formPlaintiff, vendor: formDefendant, poaHolder: formPoaHolder || undefined },
-        property: { mouza: formMouza, upazila: formUpazila, dagCS: formDag || undefined, khatianCS: formKhatian || undefined, classification: formClassification || undefined, areaDeed: formLandArea || undefined },
-        transaction: { deedType: formDeedType || 'Sale Deed', registrationDate: formRegDate || undefined, stampDutyPaid: formStampOk === 'yes', registered: (formS17 === 'yes' || !!formRegDate) ? true : (formS17 === 'no' || formS49 === 'yes') ? false : true },
-        possession: { currentPossessor: formPossessor || 'Plaintiff', startDate: formPossStartDate || undefined, nature: (formPossNature as 'open' | 'hostile' | 'peaceful') || undefined, physicalActs: formPossActs ? formPossActs.split(',').map(s => s.trim()) : undefined },
-        documentValidity: { s17Compliant: formS17 === 'yes', s49Inadmissible: formS49 === 'yes', benamiFlag: formBenami === 'yes', stampDutyOk: formStampOk === 'yes' },
-        chronology: { causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0] },
-        disputeType: formDisputeType || 'Title Suit (T.S.) — Declaration + Recovery of Possession',
-        inheritance: formReligion ? { religion: formReligion, applicableLaw: formApplicableLaw || 'MFLO', willExists: formWillExists === 'yes', mutationStatus: formMutation || 'pending' } : undefined,
-        stateAction: formAcqMutation ? { mutationStatus: formAcqMutation, ceilingExceeded: formCeilingExceeded === 'yes', acquisitionOrder: formAcquisition || undefined } : undefined,
+        // ── Core ────────────────────────────────────────────────
+        disputeType: formDisputeType || 'property title declaration',
+        description: formDescription || '',
+        causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0],
+        filingDate: new Date().toISOString().split('T')[0],
+
+        // ── Parties ─────────────────────────────────────────────
+        plaintiff: formPlaintiff,
+        plaintiffType: detectPartyKind(formPlaintiff),
+        defendant: formDefendant,
+        defendantType: detectPartyKind(formDefendant),
+        isBankCreditor: /bank|nbfi|financial institution/i.test(formPlaintiff),
+        isGovernmentDefendant: /government|govt|sarkari|ac land|dc office/i.test(formDefendant),
+        isNegotiableInstrument: /cheque|promissory|bill of exchange/i.test(formDisputeType || ''),
+
+        // ── Property ────────────────────────────────────────────
+        district: undefined, // add formDistrict state if needed
+        upazila: formUpazila || undefined,
+        mouza: formMouza || undefined,
+        dag: formDag || undefined,
+        khatian: formKhatian || undefined,
+        landArea: formLandArea || undefined,
+        classification: formClassification || undefined,
+
+        // ── Transaction ─────────────────────────────────────────
+        deedType: formDeedType || 'sale deed',
+        registrationDate: formRegDate || undefined,
+        consideration: formConsideration || undefined,
+        registered: formS17 === 'yes' || !!formRegDate,
+        stampDutyOk: formStampOk === 'yes',
+        s17Compliant: formS17 === 'yes',
+        s49Inadmissible: formS49 === 'yes',
+        benamiFlag: formBenami === 'yes',
+        multipleSales: /double sale|two buyer|same vendor/i.test(formDescription || ''),
+
+        // ── Possession ──────────────────────────────────────────
+        currentPossessor: formPossessor || 'plaintiff',
+        possessionStartDate: formPossStartDate || undefined,
+        possessionNature: formPossNature || undefined,
+        physicalActs: formPossActs ? formPossActs.split(',').map((s: string) => s.trim()) : undefined,
+        dispossessionDate: undefined, // add formDispossessionDate state if needed
+
+        // ── SAT Act / Land ───────────────────────────────────────
+        khasLand: formAcqMutation ? /khas/i.test(formAcqMutation) : false,
+        ceilingExceeded: formCeilingExceeded === 'yes',
+        mutationStatus: formMutation || formAcqMutation || undefined,
+        acquisitionOrder: formAcquisition || undefined,
+
+        // ── Misc flags ───────────────────────────────────────────
+        religion: formReligion || undefined,
+        poaHolder: formPoaHolder || undefined,
+        ostensibleOwner: false,
+        fraudulentIntent: false,
+        plaintiffReadyWilling: true,
+
+        // ── Money suits ──────────────────────────────────────────
+        amountClaimed: undefined, // add formAmountClaimed state if needed
+        defaultDate: undefined, // add formDefaultDate state if needed
+        instrumentType: undefined, // add formInstrumentType state if needed
+
+        // ── Pre-emption ──────────────────────────────────────────
+        preEmptionClaim: /pre.?emption|pre-emption/i.test(formDisputeType || ''),
+        saleConsideration: undefined, // add formSaleConsideration state if needed
+        preDepositMade: false, // add formPreDeposit state if needed
+
+        // ── Partition ────────────────────────────────────────────
+        partitionClaim: /partition/i.test(formDisputeType || ''),
+        coSharers: undefined, // add formCoSharers state if needed
+
+        // ── Adverse possession ───────────────────────────────────
+        adversePossessionClaim: /adverse.?possession/i.test(formDisputeType || ''),
+        adversePossessionYears: undefined, // add formAdvYears state if needed
+
+        // ── Government ───────────────────────────────────────────
+        s80NoticeGiven: false, // add formS80Notice state if needed
       };
       const caseRes = await fetch('/api/cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: formTitle, plaintiff: formPlaintiff, defendant: formDefendant, description: formDescription, mouza: formMouza, dag: formDag, khatian: formKhatian, factsJson: caseFacts, userId: user?.id }) });
       if (!caseRes.ok) { const e = await caseRes.json(); throw new Error(e.error || 'Failed'); }
