@@ -311,14 +311,14 @@ export function runFullAnalysis(caseId: string, facts: CaseFacts): FullAnalysisR
   let stage14!: ExecutionResult;
   try {
     stage14 = runStage14(facts, decision, stage4);
-    addPipeline(14, 'Execution Engine', 'completed', stage14.trigger ? 'info' : 'yellow',
+    addPipeline(14.1, 'Execution Engine', 'completed', stage14.trigger ? 'info' : 'yellow',
       stage14.trigger
         ? `${stage14.decreeType} | Modes: ${stage14.modes.filter(m => m.applicable).length} applicable | Limit: ${stage14.limitationPeriod} | Objections: ${stage14.objections.length}`
         : 'No execution — no executable decree',
       'CPC Order 21', []);
   } catch (e) {
     stage14 = runStage14(facts, decision, stage4);
-    addPipeline(14, 'Execution Engine', 'error', 'red', 'Stage 14 failed', '', []);
+    addPipeline(14.1, 'Execution Engine', 'error', 'red', 'Stage 14 failed', '', []);
   }
 
   // ═══════════════════════════════════════════════════════════════════════
