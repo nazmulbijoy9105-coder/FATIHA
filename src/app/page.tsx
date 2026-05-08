@@ -342,7 +342,6 @@ export default function FatihaPage() {
   const [formDescription, setFormDescription] = useState('');
   const [formMouza, setFormMouza] = useState('');
   const [formUpazila, setFormUpazila] = useState('');
-  const [formDistrict, setFormDistrict] = useState('');
   const [formDag, setFormDag] = useState('');
   const [formKhatian, setFormKhatian] = useState('');
   const [formClassification, setFormClassification] = useState('');
@@ -367,11 +366,6 @@ export default function FatihaPage() {
   const [formAcqMutation, setFormAcqMutation] = useState('');
   const [formCeilingExceeded, setFormCeilingExceeded] = useState('');
   const [formAcquisition, setFormAcquisition] = useState('');
-  const [formAmountClaimed, setFormAmountClaimed] = useState('');
-  const [formDefaultDate, setFormDefaultDate] = useState('');
-  const [formInstrumentType, setFormInstrumentType] = useState('');
-  const [formPreDeposit, setFormPreDeposit] = useState('');
-  const [formS80Notice, setFormS80Notice] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
   const [autoDetected, setAutoDetected] = useState(false);
   const [formInheritanceOpen, setFormInheritanceOpen] = useState(false);
@@ -662,8 +656,6 @@ export default function FatihaPage() {
     setFormPoaHolder(''); setFormPossessor(''); setFormPossStartDate(''); setFormPossNature('');
     setFormPossActs(''); setFormS17(''); setFormS49(''); setFormBenami(''); setFormStampOk('');
     setFormReligion(''); setFormApplicableLaw(''); setFormWillExists(''); setFormMutation('');
-    setFormDistrict(''); setFormAmountClaimed(''); setFormDefaultDate('');
-    setFormInstrumentType(''); setFormPreDeposit(''); setFormS80Notice('');
     setFormAcqMutation(''); setFormCeilingExceeded(''); setFormAcquisition(''); setAutoDetected(false);
   };
 
@@ -671,85 +663,16 @@ export default function FatihaPage() {
     if (!formTitle || !formPlaintiff || !formDefendant) { toast({ title: 'Missing fields', description: 'Title, Plaintiff, Defendant required', variant: 'destructive' }); return; }
     setAnalyzing(true);
     try {
-      // ── detectPartyKind: auto-detect from name ──────────────────────
-      const detectPartyKind = (name: string): string => {
-        if (/bank|nbfi|financial institution/i.test(name)) return 'bank';
-        if (/ltd|limited|pvt|llc|corp|inc|company|traders|enterprise/i.test(name)) return 'company';
-        if (/government|govt|sarkari|bangladesh|ministry|district/i.test(name)) return 'government';
-        return 'individual';
-      };
-
       const caseFacts: CaseFacts = {
-        // ── Core ─────────────────────────────────────────────────────────
-        disputeType: formDisputeType || 'property title declaration',
-        description: formDescription || '',
-        causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0],
-        filingDate: new Date().toISOString().split('T')[0],
-
-        // ── Parties ──────────────────────────────────────────────────────
-        plaintiff: formPlaintiff,
-        plaintiffType: detectPartyKind(formPlaintiff),
-        defendant: formDefendant,
-        defendantType: detectPartyKind(formDefendant),
-        isBankCreditor: /bank|nbfi|financial institution/i.test(formPlaintiff),
-        isGovernmentDefendant: /government|govt|sarkari|ac land|dc office/i.test(formDefendant),
-        isNegotiableInstrument: /cheque|promissory|bill of exchange/i.test(formDisputeType + ' ' + formInstrumentType),
-
-        // ── Property ─────────────────────────────────────────────────────
-        district: formDistrict || undefined,
-        upazila: formUpazila || undefined,
-        mouza: formMouza || undefined,
-        dag: formDag || undefined,
-        khatian: formKhatian || undefined,
-        landArea: formLandArea || undefined,
-        classification: formClassification || undefined,
-
-        // ── Transaction ──────────────────────────────────────────────────
-        deedType: formDeedType || 'sale deed',
-        registrationDate: formRegDate || undefined,
-        consideration: formConsideration || undefined,
-        registered: formS17 === 'yes' || !!formRegDate,
-        stampDutyOk: formStampOk === 'yes',
-        s17Compliant: formS17 === 'yes',
-        s49Inadmissible: formS49 === 'yes',
-        benamiFlag: formBenami === 'yes',
-        multipleSales: /double sale|two buyer|same vendor/i.test(formDescription),
-
-        // ── Possession ───────────────────────────────────────────────────
-        currentPossessor: formPossessor || 'plaintiff',
-        possessionStartDate: formPossStartDate || undefined,
-        possessionNature: formPossNature || undefined,
-        physicalActs: formPossActs ? formPossActs.split(',').map((s: string) => s.trim()) : undefined,
-
-        // ── SAT Act / Land ────────────────────────────────────────────────
-        khasLand: /khas/i.test(formAcqMutation + ' ' + formDescription),
-        ceilingExceeded: formCeilingExceeded === 'yes',
-        mutationStatus: formMutation || formAcqMutation || undefined,
-        acquisitionOrder: formAcquisition || undefined,
-
-        // ── Inheritance ───────────────────────────────────────────────────
-        religion: formReligion || undefined,
-        poaHolder: formPoaHolder || undefined,
-        plaintiffReadyWilling: true,
-
-        // ── Money suits ───────────────────────────────────────────────────
-        amountClaimed: formAmountClaimed ? Number(formAmountClaimed.replace(/,/g, '')) : undefined,
-        defaultDate: formDefaultDate || undefined,
-        instrumentType: formInstrumentType || undefined,
-
-        // ── Pre-emption ───────────────────────────────────────────────────
-        preEmptionClaim: /pre.?emption/i.test(formDisputeType),
-        preDepositMade: formPreDeposit === 'yes',
-
-        // ── Partition ─────────────────────────────────────────────────────
-        partitionClaim: /partition/i.test(formDisputeType),
-        coSharers: undefined,
-
-        // ── Adverse possession ────────────────────────────────────────────
-        adversePossessionClaim: /adverse.?possession/i.test(formDisputeType),
-
-        // ── Government ────────────────────────────────────────────────────
-        s80NoticeGiven: formS80Notice === 'yes',
+        parties: { purchaser: formPlaintiff, vendor: formDefendant, poaHolder: formPoaHolder || undefined },
+        property: { mouza: formMouza, upazila: formUpazila, dagCS: formDag || undefined, khatianCS: formKhatian || undefined, classification: formClassification || undefined, areaDeed: formLandArea || undefined },
+        transaction: { deedType: formDeedType || 'Sale Deed', registrationDate: formRegDate || undefined, stampDutyPaid: formStampOk === 'yes', registered: (formS17 === 'yes' || !!formRegDate) ? true : (formS17 === 'no' || formS49 === 'yes') ? false : true },
+        possession: { currentPossessor: formPossessor || 'Plaintiff', startDate: formPossStartDate || undefined, nature: (formPossNature as 'open' | 'hostile' | 'peaceful') || undefined, physicalActs: formPossActs ? formPossActs.split(',').map(s => s.trim()) : undefined },
+        documentValidity: { s17Compliant: formS17 === 'yes', s49Inadmissible: formS49 === 'yes', benamiFlag: formBenami === 'yes', stampDutyOk: formStampOk === 'yes' },
+        chronology: { causeOfActionDate: formCauseDate || new Date().toISOString().split('T')[0] },
+        disputeType: formDisputeType || 'Title Suit (T.S.) — Declaration + Recovery of Possession',
+        inheritance: formReligion ? { religion: formReligion, applicableLaw: formApplicableLaw || 'MFLO', willExists: formWillExists === 'yes', mutationStatus: formMutation || 'pending' } : undefined,
+        stateAction: formAcqMutation ? { mutationStatus: formAcqMutation, ceilingExceeded: formCeilingExceeded === 'yes', acquisitionOrder: formAcquisition || undefined } : undefined,
       };
       const caseRes = await fetch('/api/cases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: formTitle, plaintiff: formPlaintiff, defendant: formDefendant, description: formDescription, mouza: formMouza, dag: formDag, khatian: formKhatian, factsJson: caseFacts, userId: user?.id }) });
       if (!caseRes.ok) { const e = await caseRes.json(); throw new Error(e.error || 'Failed'); }
@@ -814,6 +737,7 @@ export default function FatihaPage() {
   // ═══════════════════════════════════════════════════════════════
   if (view === 'auth') {
     return (
+<<<<<<< HEAD
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 relative">
         {/* Watermark */}
         <div className="watermark-overlay" aria-hidden="true" />
@@ -893,6 +817,41 @@ export default function FatihaPage() {
             </>
           )}
           <p className="text-center text-xs text-neutral-400 mt-6">FATIHA v3.0 &middot; A Product of <span className="text-amber-700 font-semibold">Neum Lex Counsel</span></p>
+=======
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md">
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <div className="h-14 w-14 rounded-xl bg-black flex items-center justify-center shadow-lg"><Scale className="h-7 w-7 text-white" /></div>
+            <div className="text-center"><h1 className="text-2xl font-bold tracking-tight text-black">FATIHA</h1><p className="text-sm text-neutral-500 font-medium">Legal Engineering Platform</p><p className="text-xs text-neutral-400 mt-1">Bangladesh Land Litigation</p></div>
+          </div>
+          <Card className="border-gray-200 bg-white shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex gap-0 rounded-lg overflow-hidden border border-gray-200">
+                <button onClick={() => setAuthTab('signin')} className={`flex-1 py-3 text-sm font-medium transition-colors ${authTab === 'signin' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:bg-gray-50'}`}>Sign In</button>
+                <button onClick={() => setAuthTab('signup')} className={`flex-1 py-3 text-sm font-medium transition-colors ${authTab === 'signup' ? 'bg-black text-white' : 'bg-white text-neutral-500 hover:bg-gray-50'}`}>Sign Up</button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-4">
+              {authTab === 'signin' ? (<>
+                <div className="space-y-2"><Label htmlFor="si-email" className="text-sm font-medium text-neutral-700">Email</Label><Input id="si-email" type="email" placeholder="advocate@example.com" value={signinEmail} onChange={e => setSigninEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSignIn()} autoFocus className="h-11" /></div>
+                <div className="space-y-2"><Label htmlFor="si-password" className="text-sm font-medium text-neutral-700">Password</Label><Input id="si-password" type="password" placeholder="Enter password" value={signinPassword} onChange={e => setSigninPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSignIn()} className="h-11" /></div>
+                <Button className="w-full h-11 bg-black hover:bg-neutral-800 text-white font-medium" onClick={handleSignIn} disabled={authLoading}>{authLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Sign In</Button>
+                <Separator className="bg-gray-100" />
+                <Button variant="outline" className={`w-full h-11 border-gray-200 font-medium ${!googleAuthAvailable ? 'opacity-60' : ''}`} onClick={handleGoogleSignIn}><svg className="h-4 w-4 mr-2" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Sign in with Google</Button>
+              </>) : (<>
+                <div className="space-y-2"><Label htmlFor="su-name" className="text-sm font-medium text-neutral-700">Full Name</Label><Input id="su-name" placeholder="Adv. Md. Nazmul Islam" value={signupName} onChange={e => setSignupName(e.target.value)} className="h-11" /></div>
+                <div className="space-y-2"><Label htmlFor="su-email" className="text-sm font-medium text-neutral-700">Email</Label><Input id="su-email" type="email" placeholder="advocate@example.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} className="h-11" /></div>
+                <div className="space-y-2"><Label htmlFor="su-phone" className="text-sm font-medium text-neutral-700">Phone (+880)</Label><div className="flex"><span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-200 bg-gray-50 text-sm text-neutral-500 font-medium">+880</span><Input id="su-phone" placeholder="1712-345678" value={signupPhone} onChange={e => setSignupPhone(e.target.value)} className="rounded-l-none h-11" /></div></div>
+                <div className="space-y-2"><Label htmlFor="su-password" className="text-sm font-medium text-neutral-700">Password</Label><Input id="su-password" type="password" placeholder="Min. 6 characters" value={signupPassword} onChange={e => setSignupPassword(e.target.value)} className="h-11" /></div>
+                <div className="space-y-2"><Label htmlFor="su-confirm" className="text-sm font-medium text-neutral-700">Confirm Password</Label><Input id="su-confirm" type="password" placeholder="Re-enter password" value={signupConfirm} onChange={e => setSignupConfirm(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSignUp()} className="h-11" /></div>
+                <Button className="w-full h-11 bg-black hover:bg-neutral-800 text-white font-medium" onClick={handleSignUp} disabled={authLoading}>{authLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Create Account</Button>
+                <Separator className="bg-gray-100" />
+                <Button variant="outline" className="w-full h-11 border-gray-200 font-medium" onClick={handleGoogleSignIn}><svg className="h-4 w-4 mr-2" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>Sign up with Google</Button>
+              </>)}
+            </CardContent>
+          </Card>
+          <p className="text-center text-xs text-neutral-400 mt-6">FATIHA v2.1 &middot; Factual Analysis &amp; Titular Interface for Heuristic Adjudication</p>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         </div>
 
         {/* ─── Forgot Password Dialog ─── */}
@@ -922,7 +881,10 @@ export default function FatihaPage() {
   // ═══════════════════════════════════════════════════════════════
   const isPaidUnlocked = () => isAdmin || isProUser;
   const ProBadge = () => (<span className="inline-flex items-center gap-1 ml-2"><Lock className="h-3 w-3 text-amber-500" /><Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-600">PRO</Badge></span>);
+<<<<<<< HEAD
   const renderProBadge = ProBadge;
+=======
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
 
   // ═══════════════════════════════════════════════════════════════
   // USER SIDEBAR
@@ -937,7 +899,11 @@ export default function FatihaPage() {
       <ScrollArea className="flex-1 px-3 py-2">
         <div className="space-y-1">
           <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-3 mb-2">Navigation</p>
+<<<<<<< HEAD
           {([['overview', LayoutDashboard, 'Dashboard'], ['my-cases', FolderOpen, 'My Cases'], ['subscription', Crown, 'Subscription'], ['payment-history', Receipt, 'Payment History']] as const).map(([tab, Icon, label]) => (
+=======
+          {([['overview', LayoutDashboard, 'Dashboard'], ['my-cases', FolderOpen, 'My Cases'], ['subscription', Crown, 'Subscription'], ['payment-history', Receipt, 'Payment History'], ['legal-ref', BookOpen, 'Legal Reference']] as const).map(([tab, Icon, label]) => (
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
             <button key={tab} onClick={() => { setView('user-dash'); setUserTab(tab as UserTab); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'user-dash' && userTab === tab ? 'bg-black text-white' : 'text-neutral-600 hover:bg-gray-100 hover:text-black'}`}><Icon className="h-4 w-4" />{label}{tab === 'my-cases' && pendingCases > 0 && <Badge variant="secondary" className="ml-auto text-[10px] h-5 px-1.5 bg-gray-100 text-neutral-700">{pendingCases}</Badge>}{tab === 'subscription' && !isProUser && <Badge variant="outline" className="ml-auto text-[9px] px-1.5 border-amber-300 text-amber-600">PRO</Badge>}</button>
           ))}
           <button onClick={() => { setView('new-case'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${view === 'new-case' ? 'bg-black text-white' : 'text-neutral-600 hover:bg-gray-100 hover:text-black'}`}><FilePlus className="h-4 w-4" />New Case Analysis</button>
@@ -946,11 +912,14 @@ export default function FatihaPage() {
           <p className="text-xs font-semibold text-amber-700 mb-1">Upgrade to PRO</p>
           <p className="text-[11px] text-neutral-500 mb-2">Unlock evidence, fraud, injunction &amp; strategy analysis</p>
           <Button size="sm" className="w-full text-xs bg-black hover:bg-neutral-800 text-white" onClick={openUpgradeDialog}><Crown className="h-3 w-3 mr-1" />Upgrade Now</Button>
+<<<<<<< HEAD
         </div>)}
         {user?.role === 'admin' && loginRole === 'user' && (<div className="mt-4 p-3 rounded-xl bg-blue-50 border border-blue-200">
           <p className="text-xs font-semibold text-blue-700 mb-1">Admin Mode</p>
           <p className="text-[11px] text-neutral-500 mb-2">You are viewing as a regular user</p>
           <Button size="sm" variant="outline" className="w-full text-xs border-blue-300 text-blue-700 hover:bg-blue-100" onClick={() => { localStorage.setItem('fatiha-login-role', 'admin'); setView('admin-dash'); setAdminTab('overview'); setSidebarOpen(false); }}><Shield className="h-3 w-3 mr-1" />Back to Admin</Button>
+=======
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         </div>)}
       </ScrollArea>
       <Separator className="bg-gray-100" />
@@ -984,7 +953,11 @@ export default function FatihaPage() {
         <Separator className="my-3 bg-gray-100" />
         <div className="space-y-1">
           <p className="text-[10px] font-semibold text-neutral-400 uppercase tracking-wider px-3 mb-2">Switch</p>
+<<<<<<< HEAD
           <button onClick={() => { localStorage.setItem('fatiha-login-role', 'user'); setView('user-dash'); setUserTab('overview'); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-neutral-600 hover:bg-gray-100 hover:text-black"><MonitorSmartphone className="h-4 w-4" />View as User</button>
+=======
+          <button onClick={() => { setView('user-dash'); setUserTab('overview'); setSidebarOpen(false); }} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-neutral-600 hover:bg-gray-100 hover:text-black"><MonitorSmartphone className="h-4 w-4" />View as User</button>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         </div>
       </ScrollArea>
       <Separator className="bg-gray-100" />
@@ -1128,6 +1101,31 @@ export default function FatihaPage() {
           ))}</div>
         )}
       </>)}
+<<<<<<< HEAD
+=======
+
+      {/* Legal Reference Tab */}
+      {userTab === 'legal-ref' && (<>
+        <div><h2 className="text-2xl font-bold">Legal Reference</h2><p className="text-muted-foreground text-sm mt-1">Bangladesh civil law reference guide</p></div>
+        {/* Case Types */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Civil Case Types</CardTitle></div></CardHeader><CardContent><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">{CASE_TYPE_REFERENCE.map(ct => (<div key={ct.num} className="flex gap-3 p-3 rounded-lg bg-gray-50 border border-border/30"><span className="flex-shrink-0 h-7 w-7 rounded-full bg-black text-white flex items-center justify-center text-xs font-bold">{ct.num}</span><div><p className="text-sm font-medium">{ct.name}</p><p className="text-xs text-muted-foreground mt-0.5">{ct.desc}</p></div></div>))}</div></CardContent></Card>
+        {/* Court Jurisdiction */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Gavel className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Court Jurisdiction</CardTitle></div><CardDescription>2025/2026 Pecuniary Limits</CardDescription></CardHeader><CardContent className="space-y-4">
+          <div className="p-4 rounded-lg bg-primary/5 border border-primary/20"><h4 className="font-semibold text-primary flex items-center gap-2"><Landmark className="h-4 w-4" />Supreme Court</h4><div className="mt-2 ml-6 space-y-1 text-sm"><p><span className="text-muted-foreground">Appellate Division</span> — Appeals from High Court</p><p><span className="text-muted-foreground">High Court Division</span> — Writ, Appellate jurisdiction</p></div></div>
+          <div><h4 className="font-semibold text-sm mb-3">Subordinate Civil Courts</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-2">{[{ c: 'Joint District Judge', l: 'Unlimited (Tk 25 lac+)' }, { c: 'Senior Assistant Judge', l: 'Tk 15–25 lac' }, { c: 'Assistant Judge', l: 'Below Tk 15 lac' }, { c: 'Small Causes Court', l: 'Below Tk 25,000' }, { c: 'Family Court', l: 'Marriage, dower, custody' }].map(x => (<div key={x.c} className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 border border-border/30"><ChevronRight className="h-4 w-4 mt-0.5 text-green-600 shrink-0" /><div><p className="text-sm font-medium">{x.c}</p><p className="text-xs text-muted-foreground">{x.l}</p></div></div>))}</div></div>
+        </CardContent></Card>
+        {/* Party Types — Civil Case Parties */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Users className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Civil Case Party Types</CardTitle></div><CardDescription>Types of parties in a civil lawsuit</CardDescription></CardHeader><CardContent><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">{CIVIL_CASE_PARTIES.map(p => (<div key={p} className="p-2.5 rounded-lg bg-gray-50 border border-border/30 text-sm font-medium flex items-center gap-2"><UserCheck className="h-3.5 w-3.5 text-primary shrink-0" />{p}</div>))}</div></CardContent></Card>
+        {/* Party Types — Document/Evidence Parties */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Fingerprint className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Document / Evidence Party Types</CardTitle></div><CardDescription>Parties identified from documents and evidence</CardDescription></CardHeader><CardContent><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">{DOCUMENT_EVIDENCE_PARTIES.map(p => (<div key={p} className="p-2.5 rounded-lg bg-gray-50 border border-border/30 text-sm font-medium flex items-center gap-2"><ScrollText className="h-3.5 w-3.5 text-green-600 shrink-0" />{p}</div>))}</div></CardContent></Card>
+        {/* Government as Party */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Building2 className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Government as Party</CardTitle></div><CardDescription>Statutory provisions for government participation in civil cases</CardDescription></CardHeader><CardContent><div className="space-y-2">{GOVERNMENT_PARTY_SECTIONS.map(g => (<div key={g.section} className="p-3 rounded-lg bg-gray-50 border border-border/30"><div className="flex items-center gap-2 flex-wrap"><Badge variant="outline" className="text-xs">{g.section}</Badge><Badge variant="secondary" className="text-[10px]">{g.role}</Badge></div><p className="text-xs text-muted-foreground mt-1">{g.desc}</p></div>))}</div></CardContent></Card>
+        {/* Limitation Periods */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><Timer className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Limitation Periods</CardTitle></div></CardHeader><CardContent><div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">{LIMITATION_PERIODS.map(lp => (<div key={lp.type} className="p-3 rounded-lg bg-gray-50 border border-border/30"><p className="text-sm font-medium">{lp.type}</p><div className="flex items-center gap-2 mt-1"><Badge variant="outline" className="text-[10px]">{lp.period}</Badge><span className="text-[10px] text-muted-foreground">{lp.ref}</span></div></div>))}</div></CardContent></Card>
+        {/* Decision Tree */}
+        <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><div className="flex items-center gap-2"><GitBranch className="h-5 w-5 text-primary" /><CardTitle className="text-lg">Case Type Decision Tree</CardTitle></div></CardHeader><CardContent className="space-y-3">{DECISION_TREE_NODES.map(node => (<div key={node.q} className="p-3 rounded-lg bg-gray-50 border border-border/30"><p className="text-sm font-medium mb-2">{node.q}</p><div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">{node.options.map(opt => (<button key={opt.label} onClick={() => { if (opt.answer) { navigator.clipboard.writeText(opt.answer); toast({ title: 'Copied', description: opt.answer }); } }} className="text-left px-3 py-2 rounded-md text-xs bg-white border border-border/30 hover:bg-primary/5 hover:border-primary/20 transition-colors flex items-center gap-2">{opt.next ? <ChevronRight className="h-3 w-3 text-primary" /> : <CircleDot className="h-3 w-3 text-green-600" />}<span>{opt.label}</span>{opt.answer && <span className="ml-auto text-muted-foreground text-[10px] max-w-[120px] truncate">{opt.answer}</span>}</button>))}</div></div>))}</CardContent></Card>
+      </>)}
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
     </div>
   );
 
@@ -1160,7 +1158,11 @@ export default function FatihaPage() {
 
       {/* Engine Pipeline */}
       {adminTab === 'pipeline' && (<>
+<<<<<<< HEAD
         <div><h2 className="text-2xl font-bold text-red-600">Engine Pipeline</h2><p className="text-muted-foreground text-sm mt-1">15-stage Bangladesh Civil Dispute Decision Engine v3.0</p></div>
+=======
+        <div><h2 className="text-2xl font-bold text-red-600">Engine Pipeline</h2><p className="text-muted-foreground text-sm mt-1">17-stage legal analysis pipeline</p></div>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4"><div className="space-y-2">{ADMIN_PIPELINE_STAGES.map((stage, i) => (
           <div key={stage.num} className="flex items-center gap-3"><div className={`h-8 w-8 rounded-lg ${stage.color} flex items-center justify-center text-white text-xs font-bold shrink-0`}>{stage.num}</div><div className="flex-1 min-w-0"><p className="text-sm font-medium">{stage.name}</p><p className="text-xs text-muted-foreground">{stage.ref}</p></div>{i < ADMIN_PIPELINE_STAGES.length - 1 && <ChevronDown className="h-4 w-4 text-neutral-300 shrink-0" />}</div>
         ))}</div></CardContent></Card>
@@ -1168,6 +1170,7 @@ export default function FatihaPage() {
 
       {/* User Management */}
       {adminTab === 'users' && (<>
+<<<<<<< HEAD
         <div><h2 className="text-2xl font-bold text-red-600">User Management</h2><p className="text-muted-foreground text-sm mt-1">{allUsers.length} registered users &middot; {allCases.length} total cases</p></div>
         <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-0"><div className="overflow-x-auto">
           <table className="w-full text-sm"><thead><tr className="border-b border-gray-200"><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Name</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Email</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Phone</th><th className="p-3 text-center text-xs font-semibold text-muted-foreground">Cases</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Plan</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Actions</th></tr></thead>
@@ -1175,6 +1178,13 @@ export default function FatihaPage() {
             const userCaseCount = allCases.filter(c => c.userId === u.id).length;
             return (
             <tr key={u.id} className="border-b border-border/30 hover:bg-gray-50"><td className="p-3 font-medium">{u.name}{u.role === 'admin' && <Badge variant="outline" className="text-[9px] ml-2 border-red-500/30 text-red-600">ADMIN</Badge>}</td><td className="p-3 text-muted-foreground text-xs">{u.email}</td><td className="p-3 text-muted-foreground text-xs">{u.phone || '—'}</td><td className="p-3 text-center"><Badge variant="secondary" className="text-[10px]">{userCaseCount}</Badge></td><td className="p-3"><Badge variant={u.plan === 'free' ? 'secondary' : 'default'} className="text-[10px]">{u.plan.toUpperCase()}</Badge></td>
+=======
+        <div><h2 className="text-2xl font-bold text-red-600">User Management</h2><p className="text-muted-foreground text-sm mt-1">{allUsers.length} registered users</p></div>
+        <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-0"><div className="overflow-x-auto">
+          <table className="w-full text-sm"><thead><tr className="border-b border-gray-200"><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Name</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Email</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Phone</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Plan</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Actions</th></tr></thead>
+          <tbody>{allUsers.map(u => (
+            <tr key={u.id} className="border-b border-border/30 hover:bg-gray-50"><td className="p-3 font-medium">{u.name}{u.role === 'admin' && <Badge variant="outline" className="text-[9px] ml-2 border-red-500/30 text-red-600">ADMIN</Badge>}</td><td className="p-3 text-muted-foreground text-xs">{u.email}</td><td className="p-3 text-muted-foreground text-xs">{u.phone || '—'}</td><td className="p-3"><Badge variant={u.plan === 'free' ? 'secondary' : 'default'} className="text-[10px]">{u.plan.toUpperCase()}</Badge></td>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
             <td className="p-3"><Select defaultValue={u.plan} onValueChange={v => handleAdminUpgradeUser(u.id, v)}><SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="free">Free</SelectItem><SelectItem value="pro">PRO</SelectItem><SelectItem value="enterprise">Enterprise</SelectItem></SelectContent></Select></td></tr>
             );
           })}</tbody></table>
@@ -1185,6 +1195,7 @@ export default function FatihaPage() {
       {adminTab === 'all-cases' && (<>
         <div><h2 className="text-2xl font-bold text-red-600">All Cases</h2><p className="text-muted-foreground text-sm mt-1">{allCases.length} total cases</p></div>
         <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-0"><div className="overflow-x-auto">
+<<<<<<< HEAD
           <table className="w-full text-sm"><thead><tr className="border-b border-gray-200"><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Case #</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Title</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">User</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Parties</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Status</th></tr></thead>
           <tbody>{allCases.map(c => {
             const caseUser = allUsers.find(u => u.id === c.userId);
@@ -1192,6 +1203,12 @@ export default function FatihaPage() {
             <tr key={c.id} className="border-b border-border/30 hover:bg-gray-50 cursor-pointer" onClick={() => viewCaseDetail(c)}><td className="p-3 text-xs font-mono text-muted-foreground">{c.caseNumber}</td><td className="p-3 font-medium">{c.title}</td><td className="p-3 text-xs text-muted-foreground">{caseUser ? caseUser.name : (c.userId ? '—' : 'Unassigned')}</td><td className="p-3 text-xs text-muted-foreground">{c.plaintiff} v. {c.defendant}</td><td className="p-3"><Badge variant={c.status === 'analyzed' ? 'default' : 'secondary'} className={`text-[10px] ${c.status === 'analyzed' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : ''}`}>{c.status}</Badge></td></tr>
             );
           })}</tbody></table>
+=======
+          <table className="w-full text-sm"><thead><tr className="border-b border-gray-200"><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Case #</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Title</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Parties</th><th className="p-3 text-left text-xs font-semibold text-muted-foreground">Status</th></tr></thead>
+          <tbody>{allCases.map(c => (
+            <tr key={c.id} className="border-b border-border/30 hover:bg-gray-50 cursor-pointer" onClick={() => viewCaseDetail(c)}><td className="p-3 text-xs font-mono text-muted-foreground">{c.caseNumber}</td><td className="p-3 font-medium">{c.title}</td><td className="p-3 text-xs text-muted-foreground">{c.plaintiff} v. {c.defendant}</td><td className="p-3"><Badge variant={c.status === 'analyzed' ? 'default' : 'secondary'} className={`text-[10px] ${c.status === 'analyzed' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : ''}`}>{c.status}</Badge></td></tr>
+          ))}</tbody></table>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         </div></CardContent></Card>
       </>)}
 
@@ -1229,7 +1246,11 @@ export default function FatihaPage() {
           <div key={m.id} className="p-3 rounded-lg bg-gray-50 border border-border/30 flex items-center gap-3"><div className={`h-8 w-8 rounded-lg ${m.bgColor} flex items-center justify-center text-white font-bold text-xs`}>{m.name.charAt(0)}</div><div><p className="text-sm font-medium">{m.name}</p><p className="text-xs text-muted-foreground">{m.bankName ? `${m.bankName} · ${m.number}` : `${m.number} (${m.type})`}</p></div></div>
         ))}</CardContent></Card>
         <Card className="border-gray-200 bg-white shadow-sm"><CardHeader><CardTitle className="text-base">Platform Info</CardTitle></CardHeader><CardContent className="space-y-2 text-sm">
+<<<<<<< HEAD
           <div className="flex justify-between"><span className="text-muted-foreground">Version</span><span>FATIHA v3.0</span></div>
+=======
+          <div className="flex justify-between"><span className="text-muted-foreground">Version</span><span>FATIHA v2.1</span></div>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
           <div className="flex justify-between"><span className="text-muted-foreground">Developer</span><span>Adv Md Nazmul Islam (BIJOY)</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Framework</span><span>Next.js 16 + TypeScript</span></div>
           <div className="flex justify-between"><span className="text-muted-foreground">Database</span><span>JSON File Storage</span></div>
@@ -1265,7 +1286,7 @@ export default function FatihaPage() {
       </CardContent></Card>
       {/* Property */}
       <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-3"><CardTitle className="text-base">Property Details</CardTitle></CardHeader><CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Mouza</Label><Input placeholder="Village name" value={formMouza} onChange={e => setFormMouza(e.target.value)} /></div><div className="space-y-2"><Label>Upazila</Label><Input placeholder="Upazila name" value={formUpazila} onChange={e => setFormUpazila(e.target.value)} /></div><div className="space-y-2"><Label>District *</Label><Input placeholder="e.g. Narsingdi" value={formDistrict} onChange={e => setFormDistrict(e.target.value)} /></div></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Mouza</Label><Input placeholder="Village name" value={formMouza} onChange={e => setFormMouza(e.target.value)} /></div><div className="space-y-2"><Label>Upazila</Label><Input placeholder="Upazila name" value={formUpazila} onChange={e => setFormUpazila(e.target.value)} /></div></div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="space-y-2"><Label>Dag No.</Label><Input placeholder="DAG number" value={formDag} onChange={e => setFormDag(e.target.value)} /></div><div className="space-y-2"><Label>Khatian No.</Label><Input placeholder="CS/RS khatian" value={formKhatian} onChange={e => setFormKhatian(e.target.value)} /></div><div className="space-y-2"><Label>Classification</Label><Select value={formClassification} onValueChange={setFormClassification}><SelectTrigger><SelectValue placeholder="Type" /></SelectTrigger><SelectContent>{PROPERTY_CLASSIFICATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select></div></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Land Area</Label><Input placeholder="e.g., 0.5 acres" value={formLandArea} onChange={e => setFormLandArea(e.target.value)} /></div><div className="space-y-2"><Label>Registration Date</Label><Input type="date" value={formRegDate} onChange={e => setFormRegDate(e.target.value)} /></div></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>Consideration (Tk)</Label><Input placeholder="Sale price" value={formConsideration} onChange={e => setFormConsideration(e.target.value)} /></div><div className="space-y-2"><Label>Stamp Duty</Label><Input placeholder="Stamp amount" value={formStampDuty} onChange={e => setFormStampDuty(e.target.value)} /></div></div>
@@ -1366,6 +1387,7 @@ export default function FatihaPage() {
 
     return (
       <div className="space-y-6">
+<<<<<<< HEAD
         <div className="flex items-center gap-3"><button onClick={() => { if (loginRole === 'admin') { setView('admin-dash'); } else { setView('user-dash'); } }} className="p-2 rounded-lg hover:bg-gray-100"><ArrowLeft className="h-5 w-5" /></button><div className="flex-1 min-w-0"><h2 className="text-xl font-bold truncate">{selectedCase.title}</h2><p className="text-xs text-muted-foreground truncate">{selectedCase.caseNumber} &middot; {selectedCase.plaintiff} v. {selectedCase.defendant}</p></div><Badge variant={selectedCase.status === 'analyzed' ? 'default' : 'secondary'} className={selectedCase.status === 'analyzed' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : ''}>{selectedCase.status}</Badge></div>
 
         {r ? (<>
@@ -1389,10 +1411,22 @@ export default function FatihaPage() {
                 </div>
               )}
               <span className="text-[10px] text-muted-foreground ml-auto">{r.engineVersion}</span>
+=======
+        <div className="flex items-center gap-3"><button onClick={() => setView(isAdmin ? 'admin-dash' : 'user-dash')} className="p-2 rounded-lg hover:bg-gray-100"><ArrowLeft className="h-5 w-5" /></button><div className="flex-1"><h2 className="text-xl font-bold">{selectedCase.title}</h2><p className="text-xs text-muted-foreground">{selectedCase.caseNumber} &middot; {selectedCase.plaintiff} v. {selectedCase.defendant}</p></div><Badge variant={selectedCase.status === 'analyzed' ? 'default' : 'secondary'} className={selectedCase.status === 'analyzed' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : ''}>{selectedCase.status}</Badge></div>
+
+        {r ? (<>
+          {/* Score Banner */}
+          <Card className="border-gray-200"><CardContent className="p-4">
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Overall:</span><Badge variant="default" className={`text-sm px-3 py-1 ${r.overallRisk === 'STRONG' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : r.overallRisk === 'MODERATE' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-600 text-white border-red-500/20'}`}>{r.overallRisk}</Badge></div>
+              <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Score:</span><span className="text-sm font-bold">{r.overallScore}/100</span><Progress value={r.overallScore} className="h-2 w-24" /></div>
+              {r.simulationResult && (<div className="flex gap-3 text-xs"><span className="text-muted-foreground">Win:</span><span className={`font-medium ${r.simulationResult.winProbability >= 60 ? 'text-green-600' : r.simulationResult.winProbability >= 40 ? 'text-amber-600' : 'text-red-600'}`}>{r.simulationResult.winProbability}%</span><span className="text-muted-foreground ml-2">Time:</span><span className="font-medium">{r.simulationResult.estimatedTimeMonths || r.simulationResult.estimatedTimeYears}</span><span className="text-muted-foreground ml-2">Cost:</span><span className={`font-medium ${r.simulationResult.costRisk === 'Low' ? 'text-green-600' : r.simulationResult.costRisk === 'Medium' ? 'text-amber-600' : 'text-red-600'}`}>{r.simulationResult.costRisk}</span></div>)}
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
             </div>
           </CardContent></Card>
 
           {/* Tabs */}
+<<<<<<< HEAD
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList className="flex-wrap gap-1 h-auto bg-gray-50 p-1">
               {tabList.map(tab => (
@@ -1423,8 +1457,189 @@ export default function FatihaPage() {
                       <p className="text-[10px] text-muted-foreground mb-1">Case Strength</p>
                       <span className={`text-lg font-bold ${r.decision.overallStrength === 'STRONG' ? 'text-green-600' : r.decision.overallStrength === 'MODERATE' ? 'text-amber-600' : 'text-red-600'}`}>{r.decision.overallStrength}</span>
                     </div>
+=======
+          <Tabs value={activeTab} onValueChange={handleTabChange}><TabsList className="flex-wrap gap-1 h-auto bg-gray-50 p-1">
+            {['overview', 'evidence', 'fraud', 'injunction', 'relief', 'advisory', 'arguments', 'strategy'].map(tab => (<TabsTrigger key={tab} value={tab} className="text-xs px-3 py-1.5 data-[state=active]:bg-white">{tab.charAt(0).toUpperCase() + tab.slice(1)}{paidTabs.includes(tab) && !isPaidUnlocked() && <Lock className="h-3 w-3 ml-1 text-amber-600" />}</TabsTrigger>))}
+          </TabsList>
+
+          {/* ═══ OVERVIEW TAB ═══ */}
+          <TabsContent value="overview" className="mt-4"><Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-6">
+            {/* Scores */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Dimension Scores</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {r.ruleResult?.scores && Object.entries(r.ruleResult.scores).map(([k, v]) => (
+                  <div key={k}><div className="flex justify-between mb-1"><span className="text-xs capitalize">{k.replace(/([A-Z])/g, ' $1')}</span><span className="text-xs font-medium">{typeof v === 'number' ? `${Math.round(v)}%` : String(v)}</span></div><Progress value={typeof v === 'number' ? v : 50} className="h-2" /></div>
+                ))}
+              </div>
+            </div>
+            {/* Stage Pipeline */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3">Stage Pipeline</h4>
+              <div className="space-y-2">
+                {r.stages?.map((stage, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
+                    <span className={`h-3 w-3 rounded-full shrink-0 ${stage.severity === 'red' ? 'bg-red-500' : stage.severity === 'yellow' ? 'bg-amber-500' : stage.severity === 'green' ? 'bg-emerald-500' : 'bg-slate-500'}`} />
+                    <div className="flex-1 min-w-0"><p className="text-xs font-medium">{stage.stageName}</p><p className="text-[10px] text-muted-foreground">{stage.summary || stage.legalRef || ''}</p></div>
+                    <Badge variant="outline" className="text-[9px] shrink-0">{stage.status}</Badge>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Simulation Summary */}
+            {r.simulationResult && (<div>
+              <h4 className="text-sm font-semibold mb-3">Case Simulation</h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {[{ l: 'Win Probability', v: `${r.simulationResult.winProbability}%`, c: r.simulationResult.winProbability >= 60 ? 'text-green-600' : r.simulationResult.winProbability >= 40 ? 'text-amber-600' : 'text-red-600' }, { l: 'Est. Time', v: r.simulationResult.estimatedTimeMonths || r.simulationResult.estimatedTimeYears, c: 'text-foreground' }, { l: 'Appeal Risk', v: r.simulationResult.appealRisk, c: r.simulationResult.appealRisk === 'low' ? 'text-green-600' : r.simulationResult.appealRisk === 'medium' ? 'text-amber-600' : 'text-red-600' }, { l: 'Cost Risk', v: r.simulationResult.costRisk, c: r.simulationResult.costRisk === 'Low' ? 'text-green-600' : r.simulationResult.costRisk === 'Medium' ? 'text-amber-600' : 'text-red-600' }].map(s => (
+                  <div key={s.l} className="p-3 rounded-lg bg-gray-50"><p className="text-[10px] text-muted-foreground">{s.l}</p><p className={`text-sm font-bold ${s.c}`}>{s.v}</p></div>
+                ))}
+              </div>
+              {r.simulationResult.strategicAdvice && (<div className="mt-3 p-3 rounded-lg bg-primary/5 border border-primary/10"><p className="text-[10px] font-semibold text-primary mb-1">Strategic Advice</p><p className="text-xs text-muted-foreground">{r.simulationResult.strategicAdvice}</p></div>)}
+              {r.simulationResult.courtRouting && (<div className="mt-2 p-3 rounded-lg bg-gray-50"><p className="text-[10px] font-semibold mb-1">Court Routing</p><p className="text-xs">Primary: <span className="font-medium">{r.simulationResult.courtRouting.primary}</span></p>{r.simulationResult.courtRouting.alternative && <p className="text-xs">Alternative: <span className="font-medium">{r.simulationResult.courtRouting.alternative}</span></p>}{r.simulationResult.courtRouting.reason && <p className="text-[10px] text-muted-foreground mt-1">{r.simulationResult.courtRouting.reason}</p>}</div>)}
+            </div>)}
+            {/* Key Flags */}
+            {r.ruleResult?.flags && r.ruleResult.flags.length > 0 && (<div>
+              <h4 className="text-sm font-semibold mb-3">Key Flags</h4>
+              <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                {r.ruleResult.flags.map((flag, i) => (
+                  <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50">
+                    <span className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${flag.severity === 'red' ? 'bg-red-500' : flag.severity === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                    <div className="flex-1 min-w-0"><p className="text-xs font-medium">{flag.message}</p><p className="text-[10px] text-muted-foreground">{flag.legalRef}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>)}
+            {/* Limitation */}
+            {r.limitationResult && (<div>
+              <h4 className="text-sm font-semibold mb-3">Limitation Period</h4>
+              <div className="p-3 rounded-lg bg-gray-50 space-y-2">
+                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Status</span><Badge variant={r.limitationResult.status === 'barred' ? 'destructive' : r.limitationResult.status === 'red' ? 'destructive' : r.limitationResult.status === 'yellow' ? 'secondary' : 'default'} className={`text-[10px] ${r.limitationResult.status === 'green' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : ''}`}>{r.limitationResult.status.toUpperCase()}</Badge></div>
+                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Article</span><span className="text-xs font-medium">{r.limitationResult.article}</span></div>
+                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Period</span><span className="text-xs font-medium">{r.limitationResult.periodYears} years</span></div>
+                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Deadline</span><span className="text-xs font-medium">{r.limitationResult.deadlineDate}</span></div>
+                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Days Remaining</span><span className={`text-xs font-bold ${r.limitationResult.daysRemaining > 90 ? 'text-green-600' : r.limitationResult.daysRemaining > 30 ? 'text-amber-600' : 'text-red-600'}`}>{r.limitationResult.daysRemaining}</span></div>
+                {r.limitationResult.description && <p className="text-[10px] text-muted-foreground mt-1">{r.limitationResult.description}</p>}
+                {r.limitationResult.override && <p className="text-[10px] text-amber-600 mt-1">⚠ Override: {r.limitationResult.override}</p>}
+              </div>
+            </div>)}
+          </CardContent></Card></TabsContent>
+
+          {/* ═══ EVIDENCE TAB ═══ */}
+          <TabsContent value="evidence" className="mt-4">
+            {paidTabs.includes('evidence') && !isPaidUnlocked() ? renderProLock('Evidence Analysis') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.evidenceResult ? (<>
+                  <div className="flex items-center gap-4 flex-wrap"><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Total Score:</span><span className={`text-sm font-bold ${r.evidenceResult.totalScore >= 60 ? 'text-green-600' : r.evidenceResult.totalScore >= 40 ? 'text-amber-600' : 'text-red-600'}`}>{r.evidenceResult.totalScore}/100</span><Progress value={r.evidenceResult.totalScore} className="h-2 w-24" /></div><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Burden of Proof:</span><Badge variant="outline" className="text-[10px]">{r.evidenceResult.burdenOfProof}</Badge></div></div>
+                  {r.evidenceResult.documentarySupremacy && (<div className="p-3 rounded-lg bg-gray-50"><p className="text-[10px] font-semibold mb-1">Documentary Supremacy (S.91)</p><p className="text-xs text-muted-foreground">{r.evidenceResult.documentarySupremacy}</p></div>)}
+                  {r.evidenceResult.presumptions && r.evidenceResult.presumptions.length > 0 && (<div className="p-3 rounded-lg bg-gray-50"><p className="text-[10px] font-semibold mb-1">S.114 Presumptions</p><div className="flex flex-wrap gap-1 mt-1">{r.evidenceResult.presumptions.map((p, i) => <Badge key={i} variant="outline" className="text-[9px]">{p}</Badge>)}</div></div>)}
+                  <h4 className="text-sm font-semibold">Evidence Items</h4>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {r.evidenceResult.items.map((item, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-gray-50 space-y-2">
+                        <div className="flex items-center justify-between"><p className="text-xs font-medium">{item.type}</p><span className={`text-[10px] font-bold ${item.score >= 7 ? 'text-green-600' : item.score >= 4 ? 'text-amber-600' : 'text-red-600'}`}>{item.score}/{item.maxScore}</span></div>
+                        <p className="text-[11px] text-muted-foreground">{item.description}</p>
+                        <Progress value={(item.score / Math.max(item.maxScore, 1)) * 100} className="h-1.5" />
+                        {item.legalRef && <p className="text-[9px] text-primary">{item.legalRef}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </>) : <p className="text-xs text-muted-foreground">No evidence analysis data available.</p>}
+              </CardContent></Card>
+            )}
+          </TabsContent>
+
+          {/* ═══ FRAUD TAB ═══ */}
+          <TabsContent value="fraud" className="mt-4">
+            {paidTabs.includes('fraud') && !isPaidUnlocked() ? renderProLock('Fraud Detection') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.fraudResult ? (<>
+                  <div className="flex items-center gap-4 flex-wrap"><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Overall Risk:</span><Badge className={`text-[10px] ${r.fraudResult.overallRisk === 'clean' ? 'bg-emerald-500/10 text-green-600 border-emerald-500/20' : r.fraudResult.overallRisk === 'suspicious' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-600 text-white border-red-500/20'}`}>{r.fraudResult.overallRisk.toUpperCase()}</Badge></div><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Fraud Score:</span><span className={`text-sm font-bold ${r.fraudResult.fraudScore < 30 ? 'text-green-600' : r.fraudResult.fraudScore < 60 ? 'text-amber-600' : 'text-red-600'}`}>{r.fraudResult.fraudScore}/100</span><Progress value={r.fraudResult.fraudScore} className="h-2 w-24" /></div></div>
+                  <h4 className="text-sm font-semibold">Fraud Markers</h4>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {r.fraudResult.markers.map((marker, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-gray-50">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${marker.severity === 'red' ? 'bg-red-500' : marker.severity === 'yellow' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                          <p className="text-xs font-medium">{marker.type}</p>
+                          <Badge variant="outline" className={`text-[9px] ml-auto ${marker.detected ? 'border-red-500/30 text-red-600' : 'border-emerald-500/30 text-green-600'}`}>{marker.detected ? 'DETECTED' : 'CLEAR'}</Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground ml-4.5">{marker.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>) : <p className="text-xs text-muted-foreground">No fraud analysis data available.</p>}
+              </CardContent></Card>
+            )}
+          </TabsContent>
+
+          {/* ═══ INJUNCTION TAB ═══ */}
+          <TabsContent value="injunction" className="mt-4">
+            {paidTabs.includes('injunction') && !isPaidUnlocked() ? renderProLock('Injunction Analysis') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.injunctionResult ? (<>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[{ l: 'Temporary', v: r.injunctionResult.temporaryAvailable }, { l: 'Permanent', v: r.injunctionResult.permanentAvailable }, { l: 'Mandatory', v: r.injunctionResult.mandatoryAvailable }].map(x => (
+                      <div key={x.l} className="p-3 rounded-lg bg-gray-50 text-center"><p className="text-[10px] text-muted-foreground">{x.l}</p><span className={`text-sm font-bold ${x.v ? 'text-green-600' : 'text-red-600'}`}>{x.v ? 'Available' : 'Not Available'}</span></div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Forum Probability:</span><Badge variant={r.injunctionResult.forumInjProbability === 'high' ? 'default' : r.injunctionResult.forumInjProbability === 'medium' ? 'secondary' : 'outline'} className={`text-[10px] ${r.injunctionResult.forumInjProbability === 'high' ? 'bg-emerald-500/10 text-green-600' : ''}`}>{r.injunctionResult.forumInjProbability.toUpperCase()}</Badge></div>
+                  {r.injunctionResult.conditions && r.injunctionResult.conditions.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Conditions (O.39 Three-Prong Test)</h4>
+                    <div className="space-y-1.5">
+                      {r.injunctionResult.conditions.map((c, i) => (
+                        <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50">
+                          {c.met ? <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" /> : <XCircle className="h-4 w-4 text-red-600 shrink-0" />}
+                          <div className="flex-1"><p className="text-xs font-medium">{c.label}</p><p className="text-[10px] text-muted-foreground">{c.description}</p></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>)}
+                  {r.injunctionResult.bars && r.injunctionResult.bars.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Bars</h4>
+                    <div className="space-y-1.5">
+                      {r.injunctionResult.bars.map((b, i) => (
+                        <div key={i} className={`flex items-center gap-2 p-2 rounded-lg ${b.applies ? 'bg-red-500/5 border border-red-500/20' : 'bg-gray-50'}`}>
+                          {b.applies ? <AlertTriangle className="h-4 w-4 text-red-600 shrink-0" /> : <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />}
+                          <div className="flex-1"><p className="text-xs font-medium">{b.label}</p><p className="text-[10px] text-muted-foreground">{b.description}</p>{b.legalRef && <p className="text-[9px] text-primary">{b.legalRef}</p>}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>)}
+                </>) : <p className="text-xs text-muted-foreground">No injunction analysis data available.</p>}
+              </CardContent></Card>
+            )}
+          </TabsContent>
+
+          {/* ═══ RELIEF TAB ═══ */}
+          <TabsContent value="relief" className="mt-4">
+            {paidTabs.includes('relief') && !isPaidUnlocked() ? renderProLock('Relief Optimizer') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.reliefResult ? (<>
+                  {r.reliefResult.s42Compliance && (<div className={`p-3 rounded-lg border ${r.reliefResult.s42Compliance.toLowerCase().includes('compliant') ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}><p className="text-[10px] font-semibold">S.42 Compliance</p><p className="text-xs text-muted-foreground">{r.reliefResult.s42Compliance}</p></div>)}
+                  <h4 className="text-sm font-semibold">Primary Reliefs</h4>
+                  {r.reliefResult.primaryReliefs && r.reliefResult.primaryReliefs.length > 0 && (<div className="flex flex-wrap gap-1.5">{r.reliefResult.primaryReliefs.map((rel, i) => <Badge key={i} className="bg-black text-white border-primary/20 text-[10px]">{rel}</Badge>)}</div>)}
+                  {r.reliefResult.alternativeReliefs && r.reliefResult.alternativeReliefs.length > 0 && (<div className="mt-3"><p className="text-[10px] text-muted-foreground mb-1">Alternative Reliefs</p><div className="flex flex-wrap gap-1.5">{r.reliefResult.alternativeReliefs.map((rel, i) => <Badge key={i} variant="outline" className="text-[10px]">{rel}</Badge>)}</div></div>)}
+                  {r.reliefResult.droppedReliefs && r.reliefResult.droppedReliefs.length > 0 && (<div className="mt-3"><p className="text-[10px] text-muted-foreground mb-1">Dropped Reliefs</p><div className="space-y-1">{r.reliefResult.droppedReliefs.map((dr, i) => (<div key={i} className="flex items-center gap-2 text-xs"><XCircle className="h-3 w-3 text-red-600 shrink-0" /><span className="text-muted-foreground">{dr.name}:</span><span className="text-[10px]">{dr.reason}</span></div>))}</div></div>)}
+                  {r.reliefResult.conflictWarnings && r.reliefResult.conflictWarnings.length > 0 && (<div className="mt-3 p-3 rounded-lg bg-amber-500/5 border border-amber-500/20"><p className="text-[10px] font-semibold text-amber-600 mb-1">Conflict Warnings</p>{r.reliefResult.conflictWarnings.map((w, i) => <p key={i} className="text-[10px] text-muted-foreground">⚠ {w}</p>)}</div>)}
+                  <div className="mt-3"><h4 className="text-sm font-semibold mb-2">All Reliefs</h4><div className="space-y-1.5 max-h-64 overflow-y-auto">{r.reliefResult.reliefs.map((rel, i) => (<div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-gray-50"><Badge variant={rel.type === 'primary' ? 'default' : rel.type === 'alternative' ? 'secondary' : 'outline'} className={`text-[9px] shrink-0 ${rel.type === 'primary' ? 'bg-black text-white border-primary/20' : ''}`}>{rel.type}</Badge><div className="flex-1"><p className="text-xs font-medium">{rel.name}</p>{rel.reason && <p className="text-[10px] text-muted-foreground">{rel.reason}</p>}</div>{rel.legalRef && <span className="text-[9px] text-primary shrink-0">{rel.legalRef}</span>}</div>))}</div></div>
+                </>) : <p className="text-xs text-muted-foreground">No relief analysis data available.</p>}
+              </CardContent></Card>
+            )}
+          </TabsContent>
+
+          {/* ═══ ADVISORY TAB ═══ */}
+          <TabsContent value="advisory" className="mt-4">
+            {paidTabs.includes('advisory') && !isPaidUnlocked() ? renderProLock('Client Advisory') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.clientSummary ? (<>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-4 rounded-lg bg-gray-50 text-center"><p className="text-[10px] text-muted-foreground">Win Chance</p><p className={`text-lg font-bold ${r.clientSummary.winChance.toLowerCase().includes('high') || r.clientSummary.winChance.toLowerCase().includes('strong') ? 'text-green-600' : r.clientSummary.winChance.toLowerCase().includes('moderate') ? 'text-amber-600' : 'text-red-600'}`}>{r.clientSummary.winChance}</p></div>
+                    <div className="p-4 rounded-lg bg-gray-50 text-center"><p className="text-[10px] text-muted-foreground">Estimated Time</p><p className="text-lg font-bold">{r.clientSummary.estimatedTime}</p></div>
+                    <div className="p-4 rounded-lg bg-gray-50 text-center"><p className="text-[10px] text-muted-foreground">Cost Risk</p><p className={`text-lg font-bold ${r.clientSummary.costRisk.toLowerCase() === 'low' ? 'text-green-600' : r.clientSummary.costRisk.toLowerCase() === 'medium' ? 'text-amber-600' : 'text-red-600'}`}>{r.clientSummary.costRisk}</p></div>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
                   </div>
 
+<<<<<<< HEAD
                   {/* Win Probability Bar */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1526,6 +1741,60 @@ export default function FatihaPage() {
                     </div>
                   )}
                 </>) : <p className="text-xs text-muted-foreground">No decision data available.</p>}
+=======
+          {/* ═══ ARGUMENTS TAB ═══ */}
+          <TabsContent value="arguments" className="mt-4">
+            {paidTabs.includes('arguments') && !isPaidUnlocked() ? renderProLock('Arguments Builder') : (
+              <div className="space-y-4">
+                {r.argumentTree ? (<>
+                  <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Scale className="h-4 w-4 text-green-600" />Plaintiff Arguments</CardTitle></CardHeader><CardContent className="p-4">
+                    {renderArgumentNode(r.argumentTree.plaintiff)}
+                  </CardContent></Card>
+                  <Card className="border-gray-200 bg-white shadow-sm"><CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><Shield className="h-4 w-4 text-red-600" />Defendant Arguments</CardTitle></CardHeader><CardContent className="p-4">
+                    {renderArgumentNode(r.argumentTree.defendant)}
+                  </CardContent></Card>
+                  {r.consistencyResult && (<Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3"><span className={`h-3 w-3 rounded-full ${r.consistencyResult.consistent ? 'bg-emerald-500' : 'bg-red-500'}`} /><h4 className="text-sm font-semibold">Consistency: {r.consistencyResult.consistent ? 'Consistent' : 'Contradictions Found'}</h4></div>
+                    {r.consistencyResult.contradictions && r.consistencyResult.contradictions.length > 0 && (<div className="space-y-1.5">{r.consistencyResult.contradictions.map((c, i) => (<div key={i} className={`flex items-start gap-2 p-2 rounded-lg ${c.severity === 'red' ? 'bg-red-500/5 border border-red-500/20' : 'bg-amber-500/5 border border-amber-500/20'}`}><AlertTriangle className={`h-3 w-3 mt-0.5 shrink-0 ${c.severity === 'red' ? 'text-red-600' : 'text-amber-600'}`} /><div><p className="text-xs font-medium">{c.type}</p><p className="text-[10px] text-muted-foreground">{c.description}</p></div></div>))}</div>)}
+                    {r.consistencyResult.warnings && r.consistencyResult.warnings.length > 0 && (<div className="mt-2 space-y-1">{r.consistencyResult.warnings.map((w, i) => <p key={i} className="text-[10px] text-muted-foreground">⚠ {w}</p>)}</div>)}
+                  </CardContent></Card>)}
+                </>) : <Card className="border-gray-200"><CardContent className="p-8 text-center"><p className="text-xs text-muted-foreground">No argument tree data available.</p></CardContent></Card>}
+              </div>
+            )}
+          </TabsContent>
+
+          {/* ═══ STRATEGY TAB ═══ */}
+          <TabsContent value="strategy" className="mt-4">
+            {paidTabs.includes('strategy') && !isPaidUnlocked() ? renderProLock('Strategy Engine') : (
+              <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
+                {r.strategyResult ? (<>
+                  {r.strategyResult.optimalReliefPath && r.strategyResult.optimalReliefPath.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Optimal Relief Path</h4>
+                    <div className="flex items-center gap-2 flex-wrap">{r.strategyResult.optimalReliefPath.map((step, i) => (<React.Fragment key={i}><Badge variant="outline" className="text-[10px]">{step}</Badge>{i < r.strategyResult.optimalReliefPath.length - 1 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}</React.Fragment>))}</div>
+                  </div>)}
+                  <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">Confidence Level:</span><Progress value={r.strategyResult.confidenceLevel} className="h-2 flex-1 max-w-32" /><span className="text-xs font-bold">{r.strategyResult.confidenceLevel}%</span></div>
+                  {r.strategyResult.phases && r.strategyResult.phases.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Litigation Phases</h4>
+                    <div className="space-y-3">{r.strategyResult.phases.map((phase, i) => (
+                      <div key={i} className="p-3 rounded-lg bg-gray-50 space-y-2">
+                        <div className="flex items-center justify-between"><div className="flex items-center gap-2"><Badge className="text-[9px] bg-black text-white">Phase {phase.phase}</Badge><span className="text-xs font-medium">{phase.name}</span></div><div className="flex items-center gap-2"><Badge variant="outline" className={`text-[9px] ${phase.riskLevel === 'low' ? 'border-emerald-500/30 text-green-600' : phase.riskLevel === 'medium' ? 'border-amber-500/30 text-amber-600' : 'border-red-500/30 text-red-600'}`}>{phase.riskLevel} risk</Badge><span className="text-[10px] text-muted-foreground">{phase.timeline}</span></div></div>
+                        {phase.actions && phase.actions.length > 0 && (<div className="ml-4 space-y-1">{phase.actions.map((a, j) => <p key={j} className="text-[11px] text-muted-foreground">• {a}</p>)}</div>)}
+                        {phase.legalRefs && phase.legalRefs.length > 0 && (<div className="flex flex-wrap gap-1 ml-4">{phase.legalRefs.map((ref, j) => <Badge key={j} variant="outline" className="text-[8px] px-1 py-0 text-primary">{ref}</Badge>)}</div>)}
+                      </div>
+                    ))}</div>
+                  </div>)}
+                  {r.strategyResult.keyMilestones && r.strategyResult.keyMilestones.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Key Milestones</h4>
+                    <div className="space-y-1">{r.strategyResult.keyMilestones.map((m, i) => <div key={i} className="flex items-center gap-2 text-xs"><CircleDot className="h-3 w-3 text-primary shrink-0" /><span>{m}</span></div>)}</div>
+                  </div>)}
+                  {r.strategyResult.riskMitigation && r.strategyResult.riskMitigation.length > 0 && (<div>
+                    <h4 className="text-sm font-semibold mb-2">Risk Mitigation</h4>
+                    <div className="space-y-1">{r.strategyResult.riskMitigation.map((rm, i) => <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-gray-50"><ShieldCheck className="h-3 w-3 text-green-600 shrink-0 mt-0.5" /><span className="text-xs">{rm}</span></div>)}</div>
+                  </div>)}
+                  {r.strategyResult.estimatedCostRange && (<div className="p-3 rounded-lg bg-gray-50"><p className="text-[10px] text-muted-foreground">Estimated Cost Range</p><p className="text-sm font-bold">{r.strategyResult.estimatedCostRange}</p></div>)}
+                  {r.strategyResult.disclaimer && (<div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/20"><p className="text-[10px] text-amber-600">⚠ AI Disclaimer</p><p className="text-[10px] text-muted-foreground">{r.strategyResult.disclaimer}</p></div>)}
+                </>) : <p className="text-xs text-muted-foreground">No strategy data available.</p>}
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
               </CardContent></Card>
             </TabsContent>
 
@@ -1535,7 +1804,7 @@ export default function FatihaPage() {
                 <Card className="border-gray-200 bg-white shadow-sm"><CardContent className="p-4 space-y-4">
                   <div className="flex items-center justify-between">
                     <h4 className="text-sm font-semibold">14-Stage Pipeline</h4>
-                    <span className="text-[10px] text-muted-foreground">14-stage analysis</span>
+                    <span className="text-[10px] text-muted-foreground">{r.pipeline?.length || 0} stages</span>
                   </div>
                   <div className="space-y-2 max-h-[32rem] overflow-y-auto">
                     {r.pipeline && r.pipeline.length > 0 ? r.pipeline.map((stage, i) => (
@@ -2513,6 +2782,7 @@ export default function FatihaPage() {
             </TabsContent>
 
           </Tabs>
+<<<<<<< HEAD
         </>) : (
           <Card className="border-gray-200"><CardContent className="p-8 text-center">
             <AlertCircle className="h-10 w-10 text-neutral-300 mx-auto mb-2" />
@@ -2520,6 +2790,9 @@ export default function FatihaPage() {
             <Button className="mt-3" onClick={() => { setView('new-case'); }}><FilePlus className="h-4 w-4 mr-2" />Analyze Case</Button>
           </CardContent></Card>
         )}
+=======
+        </>) : (<Card className="border-gray-200"><CardContent className="p-8 text-center"><AlertCircle className="h-10 w-10 text-neutral-300 mx-auto mb-2" /><p className="text-sm text-muted-foreground">Case not yet analyzed</p><Button className="mt-3" onClick={() => { setView('new-case'); }}><FilePlus className="h-4 w-4 mr-2" />Analyze Case</Button></CardContent></Card>)}
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
       </div>
     );
   };
@@ -2528,10 +2801,14 @@ export default function FatihaPage() {
   // MAIN LAYOUT
   // ═══════════════════════════════════════════════════════════════
   return (
+<<<<<<< HEAD
     <div className="min-h-screen flex bg-gray-50 relative">
       {/* Watermark */}
       <div className="watermark-overlay" aria-hidden="true" />
 
+=======
+    <div className="min-h-screen flex bg-gray-50">
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
       {/* Mobile overlay */}
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden" onClick={() => setSidebarOpen(false)} />}
 
@@ -2543,6 +2820,7 @@ export default function FatihaPage() {
       {/* Main */}
       <div className="flex-1 min-h-screen flex flex-col lg:ml-64">
         {/* Top Bar */}
+<<<<<<< HEAD
         <header className="sticky top-0 z-30 h-14 border-b border-gray-200 bg-white/80 backdrop-blur-md flex items-center px-4 gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-md hover:bg-gray-100 shrink-0">{sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
@@ -2561,6 +2839,15 @@ export default function FatihaPage() {
             <span className="text-[10px] text-muted-foreground hidden md:inline">v3.0</span>
             <Separator orientation="vertical" className="h-5 bg-gray-200 mx-1 hidden sm:block" />
             <button onClick={handleSignOut} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs text-neutral-500 hover:bg-red-50 hover:text-red-600 transition-colors font-medium"><LogOut className="h-3.5 w-3.5" /><span className="hidden sm:inline">Sign Out</span></button>
+=======
+        <header className="sticky top-0 z-30 h-14 border-b border-gray-200 bg-white/80 backdrop-blur flex items-center px-4 gap-3">
+          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden p-2 rounded-md hover:bg-gray-100">{sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
+          <div className="flex-1" />
+          <div className="flex items-center gap-2">
+            {!isProUser && !isAdmin && <Button size="sm" variant="outline" className="text-xs gap-1 border-amber-300 text-amber-600 hover:bg-amber-50" onClick={openUpgradeDialog}><Crown className="h-3 w-3" />Upgrade to PRO</Button>}
+            {isAdmin && view !== 'admin-dash' && view !== 'new-case' && view !== 'case-detail' && <Button size="sm" variant="outline" className="text-xs gap-1 border-red-500/30 text-red-600 hover:bg-red-500/10" onClick={() => { setView('admin-dash'); setAdminTab('overview'); }}><Shield className="h-3 w-3" />Admin Panel</Button>}
+            <Badge variant="outline" className="text-xs hidden sm:flex items-center gap-1"><Scale className="h-3 w-3 text-primary" />FATIHA v2.1</Badge>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
           </div>
         </header>
 
@@ -2574,10 +2861,14 @@ export default function FatihaPage() {
 
         {/* Footer */}
         <footer className="mt-auto border-t border-gray-200 py-3 px-4 text-center">
+<<<<<<< HEAD
           <div className="flex items-center justify-center gap-2 mb-1">
             <img src="/neum-lex-counsel-sm.png" alt="" className="h-4 w-auto opacity-60" aria-hidden="true" />
             <span className="text-[11px] text-muted-foreground leading-relaxed">FATIHA v3.0 &middot; A Product of <span className="text-amber-700 font-semibold">Neum Lex Counsel</span></span>
           </div>
+=======
+          <p className="text-[10px] text-neutral-300">FATIHA v2.1 &middot; Adv Md Nazmul Islam (BIJOY) &middot; Factual Analysis &amp; Titular Interface for Heuristic Adjudication</p>
+>>>>>>> 7860f62 (feat: premium white/black responsive UI redesign)
         </footer>
       </div>
 
