@@ -350,7 +350,7 @@ export function runStage0(facts: CaseFacts): Stage0Result {
   let pecuniarySection: string = 'Civil Courts (Amendment) Act 2026';
 
   if (amount <= 0) {
-    courtLevel = 'Joint District Judge'; // default when amount not specified
+    courtLevel = 'Unable to determine (no amount specified)';
     limit = 'N/A';
   } else if (amount <= 15_00_000) {
     courtLevel = 'Assistant Judge Court';
@@ -1459,8 +1459,6 @@ export function runStage4(
   };
 
   const applicable: LimitationDef[] = [];
-  // Guard: if causeDate is missing, fall back to today so limitation is not falsely marked barred
-  const effectiveCauseDate = causeDate || new Date().toISOString().split('T')[0];
 
   // Primary limitation based on classification
   switch (code) {
@@ -1469,8 +1467,8 @@ export function runStage4(
         suitType: 'Declaration of Title (SRA S.42)',
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
-        periodDisplay: '6 years from right denial',
-        startDate: effectiveCauseDate,
+        periodDisplay: '6 years from right to sue accrues',
+        startDate: causeDate,
       });
       break;
 
@@ -1500,7 +1498,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years (residuary — no specific article for partition)',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
 
@@ -1520,7 +1518,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years from cause of action',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       // Temporary injunction has its own timeline (not subject to limitation per se, but related)
       break;
@@ -1541,7 +1539,7 @@ export function runStage4(
         article: 'Art.132 Limitation Act',
         periodDays: 12 * 365,
         periodDisplay: '12 years (redemption) / 60 years (foreclosure)',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       // Also add 60-year period for foreclosure
       applicable.push({
@@ -1549,7 +1547,7 @@ export function runStage4(
         article: 'Art.147 Limitation Act',
         periodDays: 60 * 365,
         periodDisplay: '60 years',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
 
@@ -1569,7 +1567,7 @@ export function runStage4(
         article: 'Art.110 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
 
@@ -1589,7 +1587,7 @@ export function runStage4(
         article: 'Art.115 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years from cause of action',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
 
@@ -1599,7 +1597,7 @@ export function runStage4(
         article: 'Art.113 Limitation Act',
         periodDays: 3 * 365,
         periodDisplay: '3 years',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
 
@@ -1629,7 +1627,7 @@ export function runStage4(
         article: 'Art.120 Limitation Act',
         periodDays: 6 * 365,
         periodDisplay: '6 years (residuary)',
-        startDate: effectiveCauseDate,
+        startDate: causeDate,
       });
       break;
   }
@@ -1703,7 +1701,7 @@ export function runStage4(
     article: 'Art.113',
     period: '3 years',
     status: 'barred',
-    startDate: effectiveCauseDate,
+    startDate: causeDate,
   };
 
   // ── 4D. Condonation Analysis ───────────────────────────────────────────

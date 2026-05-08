@@ -185,10 +185,10 @@ export function runStage6(facts: CaseFacts, stage0: Stage0Result): Order37Result
   let eligible = false;
   let basis = 'Not eligible for summary suit';
 
-  const disputeLower = (facts.disputeType || '').toLowerCase();
+  const disputeLower = facts.disputeType.toLowerCase();
   const deedLower = (facts.deedType || '').toLowerCase();
   const instrumentLower = (facts.instrumentType || '').toLowerCase();
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
 
   // Check 1: Negotiable instrument
   const isNegotiableInstrument = !!facts.isNegotiableInstrument ||
@@ -314,8 +314,8 @@ export function runStage7(
     applicableReliefs: [],
   };
 
-  const disputeLower = (facts.disputeType || '').toLowerCase();
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const disputeLower = facts.disputeType.toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
 
   // ─── Determine which sub-engines to run ───
   const needsPossession = hasKeyword(disputeLower, [
@@ -398,7 +398,7 @@ export function runStage7(
 // ─── 7.1 Possession Engine ──────────────────────────────────────────────────
 
 function runPossessionEngine(facts: CaseFacts, stage4: Stage4Result): PossessionTrack {
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
   const dispossessionDate = parseDate(facts.dispossessionDate);
   const causeDate = parseDate(facts.causeOfActionDate);
   const now = new Date();
@@ -509,8 +509,8 @@ function runPossessionEngine(facts: CaseFacts, stage4: Stage4Result): Possession
 // ─── 7.2 Specific Performance Engine ────────────────────────────────────────
 
 function runSpecificPerformanceEngine(facts: CaseFacts): SpecificPerformanceCheck {
-  const descriptionLower = (facts.description || '').toLowerCase();
-  const disputeLower = (facts.disputeType || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
+  const disputeLower = facts.disputeType.toLowerCase();
 
   // ─── Step 1: S.14 Bar Check ───
   // 5 statutory bars where SP is REFUSED as a matter of law
@@ -683,8 +683,8 @@ function runSpecificPerformanceEngine(facts: CaseFacts): SpecificPerformanceChec
 // ─── 7.3 Declaration Engine ─────────────────────────────────────────────────
 
 function runDeclarationEngine(facts: CaseFacts): DeclarationCheck {
-  const descriptionLower = (facts.description || '').toLowerCase();
-  const disputeLower = (facts.disputeType || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
+  const disputeLower = facts.disputeType.toLowerCase();
 
   // ─── Standing Check ───
   // Plaintiff must have a legal right and defendant must be denying it
@@ -767,7 +767,7 @@ function runDeclarationEngine(facts: CaseFacts): DeclarationCheck {
 // ─── 7.4 Cancellation Engine ────────────────────────────────────────────────
 
 function runCancellationEngine(facts: CaseFacts): CancellationCheck {
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
   const causeDate = parseDate(facts.causeOfActionDate);
   const now = new Date();
 
@@ -861,7 +861,7 @@ function runInjunctionEngine(facts: CaseFacts): {
   temporary: TemporaryInjunction;
   permanent: PermanentInjunction;
 } {
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
 
   // ═══ TEMPORARY INJUNCTION (CPC O.39 R.1 & R.2) ═══
   // Three-prong test: (1) Prima facie case (2) Balance of convenience (3) Irreparable injury
@@ -1000,7 +1000,7 @@ export function runStage8(
   stage1: Stage1Result,
   stage25?: Stage25Result,
 ): Stage8Result {
-  const descriptionLower = (facts.description || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
   const documentStack = stage1.documentStack || [];
 
   // ─── Document Hierarchy (Weighted for land disputes) ───
@@ -1267,8 +1267,8 @@ export function runStage9(
   stage1: Stage1Result,
   stage4: Stage4Result,
 ): Stage9Result {
-  const descriptionLower = (facts.description || '').toLowerCase();
-  const disputeLower = (facts.disputeType || '').toLowerCase();
+  const descriptionLower = facts.description.toLowerCase();
+  const disputeLower = facts.disputeType.toLowerCase();
   const defects: ProceduralDefect[] = [];
 
   // ═══ 9A: Limitation Barred → Reject O.7 R.11(d) ═══
